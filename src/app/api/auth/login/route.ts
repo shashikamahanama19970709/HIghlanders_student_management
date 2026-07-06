@@ -42,51 +42,63 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For demo purposes, use mock users with plain text comparison
-    // In production, you would query your database and use bcrypt.compare()
-    const mockUser = mockUsers[role];
+    // 1. Search for user in database
+    const db = await getDatabase();
+    const dbUser = await db.collection('users').findOne({ email, role });
     
-    console.log('Mock user found:', !!mockUser, 'Email matches:', mockUser?.email === email);
+    let isPasswordValid = false;
+    let loggedInUser = null;
     
-    if (!mockUser || mockUser.email !== email) {
+    if (dbUser) {
+      // Validate using bcrypt for database user
+      isPasswordValid = await bcrypt.compare(password, dbUser.password);
+      if (isPasswordValid) {
+        loggedInUser = {
+          email: dbUser.email,
+          name: dbUser.profile ? `${dbUser.profile.firstName} ${dbUser.profile.lastName}` : dbUser.email,
+          role: dbUser.role,
+        };
+      }
+    }
+    
+    // 2. Fall back to mock users for demo/testing if not found in DB
+    if (!loggedInUser) {
+      const mockUser = mockUsers[role];
+      if (mockUser && mockUser.email === email) {
+        isPasswordValid = password === mockUser.password;
+        if (isPasswordValid) {
+          loggedInUser = {
+            email: mockUser.email,
+            name: mockUser.name,
+            role: mockUser.role,
+          };
+        }
+      }
+    }
+    
+    if (!loggedInUser || !isPasswordValid) {
       return NextResponse.json(
         { success: false, error: 'Invalid credentials' },
         { status: 401 }
       );
     }
 
-    // For demo, compare plain text passwords
-    // In production, you would use: const isPasswordValid = await bcrypt.compare(password, mockUser.password);
-    const isPasswordValid = password === mockUser.password;
-    
-    console.log('Password valid:', isPasswordValid, 'Expected:', mockUser.password, 'Got:', password);
-    
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, error: 'Invalid credentials' },
-        { status: 401 }
-      );
-    }
-
-    // Generate JWT token
+    // Generate JWT token using the validated user info
     const token = jwt.sign(
       { 
-        userId: mockUser.email,
-        email: mockUser.email,
-        role: mockUser.role,
-        name: mockUser.name,
+        userId: loggedInUser.email,
+        email: loggedInUser.email,
+        role: loggedInUser.role,
+        name: loggedInUser.name,
       },
       process.env.JWT_SECRET || 'fallback-secret-key',
       { expiresIn: '24h' }
     );
 
-    // Remove password from response
-    const { password: _, ...userWithoutPassword } = mockUser;
-
     return NextResponse.json({
       success: true,
       data: {
-        user: userWithoutPassword,
+        user: loggedInUser,
         token,
       },
     });

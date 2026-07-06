@@ -58,187 +58,259 @@ export default function StudentDashboard() {
   }
 
   return (
-    <div>
-      <h1 className="text-3xl font-bold mb-8">Student Dashboard</h1>
-      
-      {/* Welcome Message */}
-      <div className="bg-gradient-to-r from-primary-sunset to-primary-wave rounded-lg p-6 text-white mb-8">
-        <h2 className="text-2xl font-bold mb-2">Welcome back, Student!</h2>
-        <p className="text-white/90">Track your progress, manage your subscription, and stay updated with your Taekwondo journey.</p>
+    <div className="space-y-8 animate-fade-in">
+      {/* Welcome Message Banner */}
+      <div className="relative overflow-hidden bg-gradient-to-r from-primary-navy via-[#111e42] to-primary-navy rounded-3xl p-8 border border-white/5 shadow-lg shadow-primary-navy/10 flex items-center justify-between">
+        <div className="relative z-10 space-y-2">
+          <span className="px-3 py-1 bg-primary-sunset/15 text-primary-sunset text-[10px] font-bold rounded-full uppercase tracking-wider">
+            Taekwondo Journey
+          </span>
+          <h2 className="text-2xl font-bold text-white font-athletic uppercase tracking-wider mt-2">Welcome Back, Student!</h2>
+          <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
+            Track your training attendance, review class schedules, and manage your subscription. Keep training hard!
+          </p>
+        </div>
+        <div className="absolute right-0 top-0 bottom-0 opacity-10 flex items-center pr-12 pointer-events-none">
+          <img src="/images/logo.png" alt="Highlanders Shield" className="h-32 object-contain" />
+        </div>
+      </div>
+
+      {/* Belt Rank Progression Widget */}
+      <div className="bg-white rounded-2xl border border-gray-150 p-6.5 shadow-sm">
+        <div className="flex justify-between items-center mb-6">
+          <div>
+            <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Belt Progression Rank</h3>
+            <p className="text-xs text-gray-400 font-medium mt-0.5">80% attendance criteria met for promotion test eligibility</p>
+          </div>
+          <span className="px-3.5 py-1.5 bg-yellow-400/10 text-yellow-600 border border-yellow-400/20 text-xs font-bold rounded-full uppercase tracking-wider flex items-center space-x-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500" />
+            <span>Yellow Belt</span>
+          </span>
+        </div>
+
+        {/* Visual Belt Strip & Progress */}
+        <div className="space-y-4">
+          <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
+            <div className="absolute top-0 bottom-0 left-0 bg-yellow-400 border-r-4 border-yellow-500" style={{ width: '80%' }} />
+            {/* Belt stripes for martial arts feel */}
+            <div className="absolute top-0 bottom-0 left-[20%] w-1 bg-black/10" />
+            <div className="absolute top-0 bottom-0 left-[40%] w-1 bg-black/10" />
+            <div className="absolute top-0 bottom-0 left-[60%] w-1 bg-black/10" />
+            <div className="absolute top-0 bottom-0 left-[80%] w-1 bg-yellow-600/30" />
+          </div>
+
+          <div className="flex justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider">
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-400 font-medium">Current:</span>
+              <span className="text-yellow-600">Yellow Belt</span>
+            </div>
+            <div className="text-slate-400 font-black">
+              24 / 30 Classes Completed
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-gray-400 font-medium">Next:</span>
+              <span className="text-emerald-600">Green Belt</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${
-              stats.membershipStatus === 'active' ? 'bg-green-100' : 
-              stats.membershipStatus === 'expired' ? 'bg-red-100' : 'bg-yellow-100'
-            }`}>
-              <CreditCard className={`w-6 h-6 ${
-                stats.membershipStatus === 'active' ? 'text-green-600' : 
-                stats.membershipStatus === 'expired' ? 'text-red-600' : 'text-yellow-600'
-              }`} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {/* Membership */}
+        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center">
+              <CreditCard className="w-5.5 h-5.5 text-emerald-500" />
             </div>
-            <span className={`px-2 py-1 text-xs rounded-full ${
-              stats.membershipStatus === 'active' ? 'bg-green-100 text-green-800' : 
-              stats.membershipStatus === 'expired' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
-            }`}>
-              {stats.membershipStatus.charAt(0).toUpperCase() + stats.membershipStatus.slice(1)}
+            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
+              {stats.membershipStatus}
             </span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Membership</h3>
-          <p className="text-sm text-gray-600">Next payment: {new Date(stats.nextPayment).toLocaleDateString()}</p>
+          <div className="mt-5">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">Monthly Plan</h3>
+            <p className="text-gray-400 text-[11px] font-medium mt-1">Next Payment: {new Date(stats.nextPayment).toLocaleDateString()}</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <Activity className="w-6 h-6 text-blue-600" />
+        {/* Classes Attendance */}
+        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div className="w-11 h-11 bg-primary-wave/10 rounded-xl flex items-center justify-center">
+              <Activity className="w-5.5 h-5.5 text-primary-wave" />
             </div>
-            <span className="text-sm text-gray-600">{stats.attendedClasses}/{stats.totalClasses}</span>
+            <span className="text-xs font-bold text-gray-500">{stats.attendedClasses} / {stats.totalClasses}</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">Class Attendance</h3>
-          <p className="text-sm text-gray-600">This month</p>
+          <div className="mt-5">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">Class Attendance</h3>
+            <p className="text-gray-400 text-[11px] font-medium mt-1">Training sessions this month</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
-              <Trophy className="w-6 h-6 text-purple-600" />
+        {/* Current Rank */}
+        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div className="w-11 h-11 bg-amber-50 rounded-xl flex items-center justify-center">
+              <Trophy className="w-5.5 h-5.5 text-amber-500" />
             </div>
-            <span className="text-sm text-gray-600">Current</span>
+            <span className="px-2.5 py-1 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold rounded-full uppercase tracking-wider">Active</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">{stats.currentRank}</h3>
-          <p className="text-sm text-gray-600">Next: {stats.nextRank}</p>
+          <div className="mt-5">
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">{stats.currentRank}</h3>
+            <p className="text-gray-400 text-[11px] font-medium mt-1">Next promotion rank: {stats.nextRank}</p>
+          </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-600" />
+        {/* Subscription Cost */}
+        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
+          <div className="flex items-center justify-between">
+            <div className="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-5.5 h-5.5 text-purple-500" />
             </div>
-            <span className="text-sm text-gray-600">Monthly</span>
+            <span className="text-xs font-bold text-gray-500">Monthly</span>
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-1">£{stats.monthlyFee}</h3>
-          <p className="text-sm text-gray-600">Membership fee</p>
+          <div className="mt-5">
+            <h3 className="text-2xl font-black text-gray-900 leading-none mb-0.5">£{stats.monthlyFee}</h3>
+            <p className="text-gray-400 text-[11px] font-medium">Standard Club membership fee</p>
+          </div>
         </div>
       </div>
 
-      {/* Recent Activity & Upcoming Classes */}
+      {/* Recent & Upcoming Classes Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Classes */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
+        <div className="bg-white rounded-2xl border border-gray-150 p-7 shadow-sm">
+          <div className="flex items-center mb-6 border-b pb-4">
             <Clock className="w-5 h-5 mr-2 text-primary-sunset" />
-            Recent Classes
-          </h2>
+            <h2 className="text-lg font-bold text-gray-900 tracking-wide uppercase font-athletic">Recent Classes</h2>
+          </div>
+          
           <div className="space-y-4">
-            <div className="border-b pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Beginners Taekwondo</p>
-                  <p className="text-sm text-gray-600">April 1, 2024 - 4:00 PM</p>
-                  <p className="text-xs text-gray-500">Attended ✓</p>
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Beginners Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>April 1, 2026</span>
+                  <span>•</span>
+                  <span>4:00 PM</span>
                 </div>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                  Completed
-                </span>
               </div>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Attended
+              </span>
             </div>
-            <div className="border-b pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Advanced Taekwondo</p>
-                  <p className="text-sm text-gray-600">March 30, 2024 - 6:00 PM</p>
-                  <p className="text-xs text-gray-500">Attended ✓</p>
+
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Advanced Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>March 30, 2026</span>
+                  <span>•</span>
+                  <span>6:00 PM</span>
                 </div>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                  Completed
-                </span>
               </div>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Attended
+              </span>
             </div>
-            <div className="pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Adult Fitness Taekwondo</p>
-                  <p className="text-sm text-gray-600">March 28, 2024 - 8:00 PM</p>
-                  <p className="text-xs text-gray-500">Attended ✓</p>
+
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Adult Fitness Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>March 28, 2026</span>
+                  <span>•</span>
+                  <span>8:00 PM</span>
                 </div>
-                <span className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">
-                  Completed
-                </span>
               </div>
+              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Attended
+              </span>
             </div>
           </div>
         </div>
 
         {/* Upcoming Classes */}
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-xl font-semibold mb-4 flex items-center">
+        <div className="bg-white rounded-2xl border border-gray-150 p-7 shadow-sm">
+          <div className="flex items-center mb-6 border-b pb-4">
             <Calendar className="w-5 h-5 mr-2 text-primary-sunset" />
-            Upcoming Classes
-          </h2>
+            <h2 className="text-lg font-bold text-gray-900 tracking-wide uppercase font-athletic">Upcoming Classes</h2>
+          </div>
+
           <div className="space-y-4">
-            <div className="border-b pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Beginners Taekwondo</p>
-                  <p className="text-sm text-gray-600">Today - 4:00 PM</p>
-                  <p className="text-xs text-gray-500">Instructor: Master Highland</p>
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Beginners Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>Today</span>
+                  <span>•</span>
+                  <span>4:00 PM</span>
+                  <span>•</span>
+                  <span>Master Highland</span>
                 </div>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                  Today
-                </span>
               </div>
+              <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Today
+              </span>
             </div>
-            <div className="border-b pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Advanced Taekwondo</p>
-                  <p className="text-sm text-gray-600">Tomorrow - 6:00 PM</p>
-                  <p className="text-xs text-gray-500">Instructor: Master Chen</p>
+
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Advanced Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>Tomorrow</span>
+                  <span>•</span>
+                  <span>6:00 PM</span>
+                  <span>•</span>
+                  <span>Master Chen</span>
                 </div>
-                <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">
-                  Tomorrow
-                </span>
               </div>
+              <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200/50 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Tomorrow
+              </span>
             </div>
-            <div className="pb-4">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="font-medium">Adult Fitness Taekwondo</p>
-                  <p className="text-sm text-gray-600">Friday - 8:00 PM</p>
-                  <p className="text-xs text-gray-500">Instructor: Master Highland</p>
+
+            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+              <div>
+                <p className="font-bold text-gray-900 text-sm">Adult Fitness Taekwondo</p>
+                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                  <span>Friday</span>
+                  <span>•</span>
+                  <span>8:00 PM</span>
+                  <span>•</span>
+                  <span>Master Highland</span>
                 </div>
-                <span className="px-2 py-1 bg-gray-100 text-gray-800 text-xs rounded-full">
-                  This Week
-                </span>
               </div>
+              <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200/50 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                Friday
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Quick Actions */}
-      <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <CreditCard className="w-6 h-6 text-primary-sunset mb-2" />
-            <h3 className="font-medium">Manage Subscription</h3>
-            <p className="text-sm text-gray-600">Update or change your membership plan</p>
-          </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <User className="w-6 h-6 text-primary-sunset mb-2" />
-            <h3 className="font-medium">Update Profile</h3>
-            <p className="text-sm text-gray-600">Edit your personal information</p>
-          </button>
-          <button className="p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-left">
-            <Calendar className="w-6 h-6 text-primary-sunset mb-2" />
-            <h3 className="font-medium">View Schedule</h3>
-            <p className="text-sm text-gray-600">See your class schedule and attendance</p>
-          </button>
+      {/* Quick Actions Grid */}
+      <div className="bg-white rounded-2xl border border-gray-150 p-7 shadow-sm">
+        <h2 className="text-lg font-bold text-gray-900 tracking-wide uppercase font-athletic mb-6 pb-4 border-b border-gray-100">Quick Actions</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <a href="/student/subscription" className="p-6 border border-slate-150 rounded-2xl hover:shadow-xl hover:shadow-gray-200/30 hover:-translate-y-0.5 transition-all duration-300 text-left block group">
+            <CreditCard className="w-7 h-7 text-primary-sunset mb-4 group-hover:scale-105 transition-transform duration-300" />
+            <h3 className="font-bold text-gray-900 text-base">Manage Subscription</h3>
+            <p className="text-xs text-gray-400 font-semibold mt-1 leading-relaxed">Update or change your membership plan and payment parameters.</p>
+          </a>
+          
+          <a href="/student/profile" className="p-6 border border-slate-150 rounded-2xl hover:shadow-xl hover:shadow-gray-200/30 hover:-translate-y-0.5 transition-all duration-300 text-left block group">
+            <User className="w-7 h-7 text-primary-sunset mb-4 group-hover:scale-105 transition-transform duration-300" />
+            <h3 className="font-bold text-gray-900 text-base">Update Profile</h3>
+            <p className="text-xs text-gray-400 font-semibold mt-1 leading-relaxed">Edit your personal contact info, guardian info and medical details.</p>
+          </a>
+          
+          <a href="/student" className="p-6 border border-slate-150 rounded-2xl hover:shadow-xl hover:shadow-gray-200/30 hover:-translate-y-0.5 transition-all duration-300 text-left block group">
+            <Calendar className="w-7 h-7 text-primary-sunset mb-4 group-hover:scale-105 transition-transform duration-300" />
+            <h3 className="font-bold text-gray-900 text-base">View Schedule</h3>
+            <p className="text-xs text-gray-400 font-semibold mt-1 leading-relaxed">See upcoming training schedules, events and logs of class attendance.</p>
+          </a>
         </div>
       </div>
     </div>

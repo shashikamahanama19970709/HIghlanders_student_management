@@ -14,6 +14,7 @@ const AboutSection = () => {
       bio: 'With over 25 years of Taekwondo experience, Master Highland is a 7th Dan Black Belt and former national champion. He founded Highlanders Taekwondo CIC to share his passion for martial arts and help build stronger communities.',
       rank: '7th Dan Black Belt',
       certifications: ['Kukkiwon Certified', 'International Referee', 'First Aid Certified'],
+      image: { url: '/images/master_james.png', fileKey: 'james' },
     },
     {
       _id: '2',
@@ -22,6 +23,7 @@ const AboutSection = () => {
       bio: 'Master Chen brings 15 years of competitive Taekwondo experience and specializes in youth development. Her innovative teaching methods have helped hundreds of students achieve their goals.',
       rank: '5th Dan Black Belt',
       certifications: ['Kukkiwon Certified', 'Youth Development Specialist', 'Sports Psychology'],
+      image: { url: '/images/master_sarah.png', fileKey: 'sarah' },
     },
   ];
 
@@ -141,12 +143,23 @@ const AboutSection = () => {
                 className="bg-gray-50 rounded-2xl p-8 hover:shadow-lg transition-shadow duration-300"
               >
                 <div className="flex flex-col md:flex-row gap-6">
-                  {/* Placeholder for master image */}
-                  <div className="w-32 h-32 bg-gradient-to-br from-primary-sunset to-primary-wave rounded-full flex items-center justify-center text-white flex-shrink-0">
-                    <span className="text-3xl font-bold">
-                      {master.name.split(' ').map(n => n[0]).join('')}
-                    </span>
-                  </div>
+                  {/* Master avatar image */}
+                  {master.image?.url ? (
+                    <div className="relative w-32 h-32 flex-shrink-0">
+                      <div className="absolute inset-0 bg-gradient-to-br from-primary-sunset to-primary-wave rounded-full blur-sm opacity-45 animate-pulse-slow" />
+                      <img 
+                        src={master.image.url} 
+                        alt={master.name}
+                        className="relative w-32 h-32 rounded-full object-cover border-2 border-white shadow-lg"
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-32 h-32 bg-gradient-to-br from-primary-sunset to-primary-wave rounded-full flex items-center justify-center text-white flex-shrink-0">
+                      <span className="text-3xl font-bold">
+                        {master.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                  )}
                   
                   <div className="flex-1">
                     <h4 className="text-2xl font-bold mb-1 font-athletic text-gray-900">

@@ -48,27 +48,37 @@ const Navbar = () => {
     <motion.nav
       initial={{ y: -100 }}
       animate={{ y: 0 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         isScrolled
-          ? 'bg-white/90 backdrop-blur-md shadow-lg'
+          ? 'bg-white/85 backdrop-blur-xl border-b border-gray-100/50 shadow-lg shadow-gray-100/10'
           : 'bg-transparent'
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
           <motion.div
-            className="flex-shrink-0"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+            className="flex-shrink-0 flex items-center space-x-3 cursor-pointer"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => handleNavClick('#home')}
           >
-            <img 
-              src="/images/logo.png" 
-              alt="Highlanders Taekwondo" 
-              className="h-10 w-auto"
-            />
+            <div className={`relative w-12 h-12 flex items-center justify-center p-1 rounded-xl shadow-inner border transition-all duration-300 ${
+              isScrolled 
+                ? 'bg-gradient-to-b from-[#0A1128] to-[#101b3f] border-slate-200/50' 
+                : 'bg-white/10 border-white/10'
+            }`}>
+              <img 
+                src="/images/logo.png" 
+                alt="Highlanders Taekwondo" 
+                className="h-10 w-auto object-contain"
+              />
+            </div>
+            <span className={`font-athletic text-xl font-black tracking-wider uppercase ${isScrolled ? 'text-primary-navy' : 'text-white'}`}>
+              Highlanders
+            </span>
           </motion.div>
-
+ 
           {/* Desktop Navigation */}
           <div className="hidden md:block">
             <div className="ml-10 flex items-center space-x-8">
@@ -76,10 +86,8 @@ const Navbar = () => {
                 <motion.button
                   key={item.name}
                   onClick={() => handleNavClick(item.href)}
-                  className={`nav-link ${
-                    isScrolled ? 'text-gray-700' : 'text-white'
-                  }`}
-                  whileHover={{ scale: 1.1 }}
+                  className={isScrolled ? 'nav-link-scrolled' : 'nav-link'}
+                  whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.95 }}
                 >
                   {item.name}
@@ -89,12 +97,12 @@ const Navbar = () => {
               {/* Login Button */}
               <motion.button
                 onClick={handleLogin}
-                className={`flex items-center space-x-2 px-4 py-2 border rounded-lg transition-all duration-200 ${
+                className={`flex items-center space-x-2 px-5 py-2.5 border rounded-full font-semibold transition-all duration-300 ${
                   isScrolled 
-                    ? 'border-gray-300 text-gray-700 hover:bg-gray-100' 
-                    : 'border-white text-white hover:bg-white/10'
+                    ? 'border-gray-200 text-gray-700 hover:bg-gray-50 hover:border-gray-300 hover:text-primary-sunset' 
+                    : 'border-white/30 text-white hover:bg-white/10 hover:border-white'
                 }`}
-                whileHover={{ scale: 1.05 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.95 }}
               >
                 <LogIn className="w-4 h-4" />
@@ -105,8 +113,8 @@ const Navbar = () => {
               <motion.button
                 onClick={handleJoinUs}
                 className="btn-primary"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
               >
                 Join Us
               </motion.button>

@@ -1,44 +1,44 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, ExternalLink } from 'lucide-react';
+import { Mail, Phone, MapPin, ExternalLink, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 
 const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   const socialLinks = [
-    { name: 'Facebook', icon: '📘', url: '#' },
-    { name: 'Instagram', icon: '📷', url: '#' },
-    { name: 'Twitter', icon: '🐦', url: '#' },
-    { name: 'YouTube', icon: '📹', url: '#' },
+    { name: 'Facebook', icon: Facebook, url: '#' },
+    { name: 'Instagram', icon: Instagram, url: '#' },
+    { name: 'Twitter', icon: Twitter, url: '#' },
+    { name: 'YouTube', icon: Youtube, url: '#' },
   ];
 
   return (
-    <footer className="bg-primary-navy text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+    <footer className="bg-primary-navy border-t border-white/5 text-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
           {/* Club Info */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h3 className="text-2xl font-bold mb-4 font-athletic">
+            <h3 className="text-2xl font-bold mb-4 font-athletic uppercase tracking-wider">
               Highlanders Taekwondo
             </h3>
-            <p className="text-gray-300 mb-4">
+            <p className="text-gray-400 mb-6 text-sm leading-relaxed">
               Building champions in martial arts and life. Join our community of dedicated martial artists.
             </p>
-            <div className="flex space-x-4">
+            <div className="flex space-x-3.5">
               {socialLinks.map((social) => (
                 <motion.a
                   key={social.name}
                   href={social.url}
-                  className="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center hover:bg-white/20 transition-colors duration-200"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
+                  className="w-10 h-10 bg-white/5 rounded-full border border-white/10 flex items-center justify-center text-white/70 hover:bg-white/10 hover:border-white/20 hover:text-white transition-all duration-200"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                 >
-                  <span className="text-xl">{social.icon}</span>
+                  <social.icon className="w-5 h-5" />
                 </motion.a>
               ))}
             </div>

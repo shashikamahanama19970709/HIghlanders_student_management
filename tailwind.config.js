@@ -9,15 +9,15 @@ module.exports = {
     extend: {
       colors: {
         primary: {
-          navy: '#1a2332',
-          sunset: '#ff6b35',
-          wave: '#4a90e2',
-          silver: '#c0c0c0',
+          navy: '#0A1128', // Deep space/athletic navy
+          sunset: '#FF5A1F', // Vibrant fire/sunset orange
+          wave: '#00A8E8', // Cyan wave blue
+          silver: '#CBD5E1', // Metallic silver grey
           white: '#ffffff',
         },
         glass: {
-          white: 'rgba(255, 255, 255, 0.1)',
-          border: 'rgba(255, 255, 255, 0.2)',
+          white: 'rgba(255, 255, 255, 0.05)',
+          border: 'rgba(255, 255, 255, 0.1)',
         },
       },
       fontFamily: {

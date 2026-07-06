@@ -66,3 +66,83 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+// PATCH /api/members - Update member request status and create user if approved
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, status } = await request.json();
+
+    if (!id || !status || !['approved', 'rejected'].includes(status)) {
+      return NextResponse.json(
+        { success: false, error: 'Invalid or missing parameters' },
+        { status: 400 }
+      );
+    }
+
+    const db = await getDatabase();
+    const { ObjectId } = await import('mongodb');
+
+    // Find the member request first
+    const memberRequest = await db.collection('memberRequests').findOne({ _id: new ObjectId(id) });
+    if (!memberRequest) {
+      return NextResponse.json(
+        { success: false, error: 'Member request not found' },
+        { status: 404 }
+      );
+    }
+
+    // Update the request status
+    await db.collection('memberRequests').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status, updatedAt: new Date() } }
+    );
+
+    // If approved, create a student user account
+    if (status === 'approved') {
+      // Check if user already exists
+      const existingUser = await db.collection('users').findOne({ email: memberRequest.email });
+      if (!existingUser) {
+        const bcrypt = await import('bcryptjs');
+        // Hash a default password
+        const defaultPassword = 'password123';
+        const hashedPassword = await bcrypt.hash(defaultPassword, 10);
+
+        const newUser = {
+          email: memberRequest.email,
+          password: hashedPassword,
+          role: 'student',
+          profile: {
+            firstName: memberRequest.firstName,
+            lastName: memberRequest.lastName,
+            phone: memberRequest.phone,
+            dateOfBirth: memberRequest.dateOfBirth,
+            isMinor: memberRequest.isMinor,
+            parentGuardian: memberRequest.parentGuardian,
+          },
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        };
+
+        await db.collection('users').insertOne(newUser);
+        
+        return NextResponse.json({
+          success: true,
+          message: `Member approved. Student account created for ${memberRequest.email} with password "${defaultPassword}"`,
+          data: { email: memberRequest.email, password: defaultPassword }
+        });
+      }
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: `Member request status updated to ${status}`,
+    });
+  } catch (error) {
+    console.error('Error updating member request:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update member request' },
+      { status: 500 }
+    );
+  }
+}
+

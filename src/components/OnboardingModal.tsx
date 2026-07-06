@@ -29,6 +29,26 @@ const OnboardingModal = ({ isOpen, onClose }: OnboardingModalProps) => {
   const watchIsMinor = watch('isMinor');
   const watchTermsAccepted = watch('termsAccepted');
 
+  const dobRegister = register('dateOfBirth', {
+    required: 'Date of birth is required',
+    validate: {
+      notFuture: (value) => {
+        if (!value) return true;
+        const selected = new Date(value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return selected <= today || 'Date of birth cannot be in the future';
+      },
+      tooOld: (value) => {
+        if (!value) return true;
+        const selected = new Date(value);
+        const minDate = new Date();
+        minDate.setFullYear(minDate.getFullYear() - 100);
+        return selected >= minDate || 'Please enter a valid date of birth';
+      }
+    }
+  });
+
   // Calculate if the person is a minor based on date of birth
   const calculateIsMinor = (dateOfBirth: string) => {
     if (!dateOfBirth) return false;
@@ -237,13 +257,14 @@ By accepting these terms, you confirm that you have read, understood, and agree 
                   Date of Birth *
                 </h3>
                 <input
-                  {...register('dateOfBirth', { required: 'Date of birth is required' })}
                   type="date"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
+                  name={dobRegister.name}
+                  ref={dobRegister.ref}
+                  onBlur={dobRegister.onBlur}
                   onChange={(e) => {
-                    const isMinor = calculateIsMinor(e.target.value);
-                    // This will trigger re-render and show/hide parent fields
+                    dobRegister.onChange(e);
                   }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
                 />
                 {errors.dateOfBirth && (
                   <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth.message}</p>
