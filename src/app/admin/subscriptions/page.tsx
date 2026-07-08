@@ -447,19 +447,19 @@ export default function AdminSubscriptions() {
               </div>
 
               {/* Modal Footer */}
-              <div className="px-6 py-4.5 bg-slate-50 border-t border-gray-100 flex justify-end space-x-3">
+              <div className="px-4 sm:px-6 py-4.5 bg-slate-50 border-t border-gray-100 flex w-full sm:w-auto justify-end gap-3">
                 <button
                   type="button"
                   onClick={closeModal}
                   disabled={saving}
-                  className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 rounded-xl transition-all"
+                  className="flex-1 sm:flex-initial px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 rounded-xl transition-all text-center justify-center flex"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={saving || !name || !price}
-                  className="px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 sm:flex-initial px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-center"
                 >
                   <span>{saving ? 'Saving...' : editingPlanId ? 'Save Changes' : 'Save & Publish Plan'}</span>
                 </button>

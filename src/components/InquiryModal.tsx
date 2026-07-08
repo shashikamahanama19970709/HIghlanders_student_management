@@ -143,7 +143,7 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
           className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
         >
           {/* Header */}
-          <div className="bg-gradient-to-r from-primary-navy to-[#121c3f] border-b-2 border-primary-sunset text-white p-6 relative">
+          <div className="bg-gradient-to-r from-primary-navy to-[#121c3f] border-b-2 border-primary-sunset text-white p-4 sm:p-6 relative">
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-bold font-athletic">Make an Inquiry</h2>
@@ -159,7 +159,7 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
           </div>
 
           {/* Form Content */}
-          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6">
+          <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 sm:p-6">
             <div className="space-y-6">
               {/* Personal Information */}
               <div>
@@ -277,16 +277,16 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
           </form>
 
           {/* Footer */}
-          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 border-t border-gray-200">
-            <div className="flex justify-between items-center">
+          <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-4 sm:p-6 border-t border-gray-200">
+            <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-center sm:text-left">
               <div className="text-sm text-gray-600">
                 <p>We'll respond to your inquiry within 24-48 hours.</p>
               </div>
-              <div className="flex space-x-4">
+              <div className="flex w-full sm:w-auto justify-center sm:justify-end gap-3">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                  className="flex-1 sm:flex-initial px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-center justify-center"
                 >
                   Cancel
                 </button>
@@ -294,7 +294,7 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
                   type="submit"
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center space-x-2"
+                  className="flex-1 sm:flex-initial btn-primary disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center space-x-2 text-center"
                 >
                   <Send className="w-4 h-4" />
                   <span>{isSubmitting ? 'Submitting...' : 'Send Inquiry'}</span>
