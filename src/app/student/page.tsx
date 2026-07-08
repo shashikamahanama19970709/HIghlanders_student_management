@@ -2,15 +2,26 @@
 
 import { useEffect, useState } from 'react';
 import { Calendar, CreditCard, User, Trophy, Clock, DollarSign, Activity } from 'lucide-react';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface StudentStats {
-  membershipStatus: 'active' | 'inactive' | 'expired';
+  membershipStatus: string;
   nextPayment: string;
+  planName: string;
   attendedClasses: number;
   totalClasses: number;
   currentRank: string;
   nextRank: string;
   monthlyFee: number;
+  studentName: string;
+  upcomingClasses: Array<{
+    id: string;
+    name: string;
+    days: string[];
+    time: string;
+    instructor: string;
+    category: string;
+  }>;
 }
 
 export default function StudentDashboard() {
@@ -23,17 +34,23 @@ export default function StudentDashboard() {
 
   const fetchStudentStats = async () => {
     try {
-      // TODO: Implement student stats API
-      const mockStats: StudentStats = {
-        membershipStatus: 'active',
-        nextPayment: '2024-05-01',
-        attendedClasses: 24,
-        totalClasses: 30,
-        currentRank: 'Yellow Belt',
-        nextRank: 'Green Belt',
-        monthlyFee: 45,
-      };
-      setStats(mockStats);
+      const response = await fetch('/api/student/dashboard', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setStats(result.data);
+      }
     } catch (error) {
       console.error('Error fetching student stats:', error);
     } finally {
@@ -42,30 +59,30 @@ export default function StudentDashboard() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading dashboard...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">No data available.</div>
+        <div className="text-lg text-gray-600 font-semibold">No dashboard data available.</div>
       </div>
     );
   }
 
+  const attendancePercent = stats.totalClasses > 0 ? (stats.attendedClasses / stats.totalClasses) * 100 : 0;
+
   return (
-    <div className="space-y-8 animate-fade-in">
+    <div className="space-y-8 animate-fade-in pl-1 pr-1 pb-10">
       {/* Welcome Message Banner */}
       <div className="relative overflow-hidden bg-gradient-to-r from-primary-navy via-[#111e42] to-primary-navy rounded-3xl p-8 border border-white/5 shadow-lg shadow-primary-navy/10 flex items-center justify-between">
         <div className="relative z-10 space-y-2">
           <span className="px-3 py-1 bg-primary-sunset/15 text-primary-sunset text-[10px] font-bold rounded-full uppercase tracking-wider">
             Taekwondo Journey
           </span>
-          <h2 className="text-2xl font-bold text-white font-athletic uppercase tracking-wider mt-2">Welcome Back, Student!</h2>
+          <h2 className="text-2xl font-bold text-white font-athletic uppercase tracking-wider mt-2">
+            Welcome Back, {stats.studentName || 'Student'}!
+          </h2>
           <p className="text-slate-300 text-sm max-w-xl leading-relaxed">
             Track your training attendance, review class schedules, and manage your subscription. Keep training hard!
           </p>
@@ -76,22 +93,22 @@ export default function StudentDashboard() {
       </div>
 
       {/* Belt Rank Progression Widget */}
-      <div className="bg-white rounded-2xl border border-gray-150 p-6.5 shadow-sm">
+      <div className="bg-white rounded-2xl border border-gray-150 p-6 md:p-8 shadow-sm">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h3 className="text-sm font-bold text-gray-500 uppercase tracking-wide">Belt Progression Rank</h3>
             <p className="text-xs text-gray-400 font-medium mt-0.5">80% attendance criteria met for promotion test eligibility</p>
           </div>
-          <span className="px-3.5 py-1.5 bg-yellow-400/10 text-yellow-600 border border-yellow-400/20 text-xs font-bold rounded-full uppercase tracking-wider flex items-center space-x-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-yellow-400 border border-yellow-500" />
-            <span>Yellow Belt</span>
+          <span className="px-3.5 py-1.5 bg-[#E35E1C]/10 text-[#E35E1C] border border-[#E35E1C]/20 text-xs font-bold rounded-full uppercase tracking-wider flex items-center space-x-1.5">
+            <Trophy className="w-3.5 h-3.5" />
+            <span>{stats.currentRank}</span>
           </span>
         </div>
 
         {/* Visual Belt Strip & Progress */}
         <div className="space-y-4">
           <div className="relative h-4 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-            <div className="absolute top-0 bottom-0 left-0 bg-yellow-400 border-r-4 border-yellow-500" style={{ width: '80%' }} />
+            <div className="absolute top-0 bottom-0 left-0 bg-yellow-400 border-r-4 border-yellow-500" style={{ width: `${attendancePercent}%` }} />
             {/* Belt stripes for martial arts feel */}
             <div className="absolute top-0 bottom-0 left-[20%] w-1 bg-black/10" />
             <div className="absolute top-0 bottom-0 left-[40%] w-1 bg-black/10" />
@@ -99,37 +116,39 @@ export default function StudentDashboard() {
             <div className="absolute top-0 bottom-0 left-[80%] w-1 bg-yellow-600/30" />
           </div>
 
-          <div className="flex justify-between items-center text-xs text-gray-500 font-bold uppercase tracking-wider">
-            <div className="flex items-center space-x-2">
+          <div className="flex justify-between items-center text-[11px] sm:text-xs text-gray-500 font-bold uppercase tracking-wider py-1.5 leading-normal">
+            <div className="flex items-center space-x-1 py-0.5">
               <span className="text-gray-400 font-medium">Current:</span>
-              <span className="text-yellow-600">Yellow Belt</span>
+              <span className="text-yellow-600">{stats.currentRank}</span>
             </div>
-            <div className="text-slate-400 font-black">
-              24 / 30 Classes Completed
+            <div className="text-slate-400 font-black py-0.5">
+              {stats.attendedClasses} / {stats.totalClasses} Classes Completed
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-1 py-0.5">
               <span className="text-gray-400 font-medium">Next:</span>
-              <span className="text-emerald-600">Green Belt</span>
+              <span className="text-emerald-600">{stats.nextRank}</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Membership */}
         <div className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
           <div className="flex items-center justify-between">
             <div className="w-11 h-11 bg-emerald-50 rounded-xl flex items-center justify-center">
               <CreditCard className="w-5.5 h-5.5 text-emerald-500" />
             </div>
-            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
+            <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase tracking-wider ${
+              stats.membershipStatus === 'active' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : 'bg-slate-100 text-slate-500'
+            }`}>
               {stats.membershipStatus}
             </span>
           </div>
           <div className="mt-5">
-            <h3 className="text-lg font-bold text-gray-900 leading-tight">Monthly Plan</h3>
-            <p className="text-gray-400 text-[11px] font-medium mt-1">Next Payment: {new Date(stats.nextPayment).toLocaleDateString()}</p>
+            <h3 className="text-lg font-bold text-gray-900 leading-tight">{stats.planName}</h3>
+            <p className="text-gray-400 text-[11px] font-medium mt-1">Next Payment: {stats.nextPayment === 'N/A' ? 'N/A' : new Date(stats.nextPayment).toLocaleDateString()}</p>
           </div>
         </div>
 
@@ -167,7 +186,7 @@ export default function StudentDashboard() {
             <div className="w-11 h-11 bg-purple-50 rounded-xl flex items-center justify-center">
               <DollarSign className="w-5.5 h-5.5 text-purple-500" />
             </div>
-            <span className="text-xs font-bold text-gray-500">Monthly</span>
+            <span className="text-xs font-bold text-gray-500">Subscription</span>
           </div>
           <div className="mt-5">
             <h3 className="text-2xl font-black text-gray-900 leading-none mb-0.5">£{stats.monthlyFee}</h3>
@@ -238,53 +257,30 @@ export default function StudentDashboard() {
           </div>
 
           <div className="space-y-4">
-            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div>
-                <p className="font-bold text-gray-900 text-sm">Beginners Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
-                  <span>Today</span>
-                  <span>•</span>
-                  <span>4:00 PM</span>
-                  <span>•</span>
-                  <span>Master Highland</span>
+            {stats.upcomingClasses && stats.upcomingClasses.length > 0 ? (
+              stats.upcomingClasses.map((cls) => (
+                <div key={cls.id} className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{cls.name}</p>
+                    <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
+                      <span className="capitalize">{cls.days.join(', ')}</span>
+                      <span>•</span>
+                      <span>{cls.time}</span>
+                      <span>•</span>
+                      <span>{cls.category}</span>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                    {cls.days[0] || 'Scheduled'}
+                  </span>
                 </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Calendar className="w-8 h-8 text-slate-350 mx-auto mb-2" />
+                <p className="text-xs text-gray-450 font-semibold">No visible training classes scheduled in database.</p>
               </div>
-              <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Today
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div>
-                <p className="font-bold text-gray-900 text-sm">Advanced Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
-                  <span>Tomorrow</span>
-                  <span>•</span>
-                  <span>6:00 PM</span>
-                  <span>•</span>
-                  <span>Master Chen</span>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200/50 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Tomorrow
-              </span>
-            </div>
-
-            <div className="flex justify-between items-center border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div>
-                <p className="font-bold text-gray-900 text-sm">Adult Fitness Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-2 mt-0.5">
-                  <span>Friday</span>
-                  <span>•</span>
-                  <span>8:00 PM</span>
-                  <span>•</span>
-                  <span>Master Highland</span>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-slate-100 text-slate-600 border border-slate-200/50 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Friday
-              </span>
-            </div>
+            )}
           </div>
         </div>
       </div>

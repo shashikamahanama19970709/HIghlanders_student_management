@@ -32,6 +32,7 @@ export interface Class {
   isVisible: boolean;
   maxCapacity?: number;
   currentEnrollment: number;
+  showOnWeb?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -79,7 +80,8 @@ export interface Subscription {
   description: string;
   price: number;
   currency: string;
-  billingCycle: 'monthly' | 'yearly';
+  billingCycle: 'monthly' | 'quarterly' | 'yearly';
+  features: string[];
   classes: string[]; // Class IDs
   isActive: boolean;
   stripePriceId?: string;
@@ -118,6 +120,7 @@ export interface Settings {
     fileKey: string;
     url: string;
   };
+  history?: string;
   masters: Master[];
   socialMedia: SocialMediaLink[];
   contactInfo: {
@@ -155,6 +158,7 @@ export interface Master {
   };
   rank?: string;
   certifications?: string[];
+  showOnWeb?: boolean;
 }
 
 export interface SocialMediaLink {

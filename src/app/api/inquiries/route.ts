@@ -8,13 +8,14 @@ interface InquiryRequest {
   phone: string;
   subject: string;
   message: string;
+  preferredClass?: string;
 }
 
 // POST /api/inquiries - Create a new inquiry
 export async function POST(request: NextRequest) {
   try {
     const body: InquiryRequest = await request.json();
-    const { name, email, phone, subject, message } = body;
+    const { name, email, phone, subject, message, preferredClass } = body;
 
     // Validation
     if (!name || !email || !subject || !message) {
@@ -32,6 +33,7 @@ export async function POST(request: NextRequest) {
       phone: phone || '',
       subject,
       message,
+      preferredClass: preferredClass || '',
       status: 'pending',
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -91,9 +93,10 @@ export async function PUT(request: NextRequest) {
     }
 
     const db = await getDatabase();
+    const queryId = ObjectId.isValid(_id) ? new ObjectId(_id) : _id;
     
     const result = await db.collection('inquiries').updateOne(
-      { _id },
+      { _id: queryId },
       { 
         $set: { 
           status,
@@ -109,7 +112,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedInquiry = await db.collection('inquiries').findOne({ _id });
+    const updatedInquiry = await db.collection('inquiries').findOne({ _id: queryId });
 
     return NextResponse.json({
       success: true,

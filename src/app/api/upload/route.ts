@@ -42,6 +42,14 @@ export async function POST(request: NextRequest) {
       file.type
     );
 
+    // Generate signed URL for immediate frontend preview
+    try {
+      const signedUrl = await BackblazeService.getSignedUrl(uploadResult.fileKey);
+      uploadResult.url = signedUrl;
+    } catch (urlError) {
+      console.warn('Failed to generate preview signed URL:', urlError);
+    }
+
     return NextResponse.json({
       success: true,
       data: uploadResult,

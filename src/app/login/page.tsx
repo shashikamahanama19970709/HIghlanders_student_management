@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Lock, Eye, EyeOff, GraduationCap } from 'lucide-react';
+import { User, Lock, Eye, EyeOff, GraduationCap, X, Mail, Key } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 
@@ -22,25 +22,107 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
+  // Forgot Password modal states
+  const [isResetOpen, setIsResetOpen] = useState(false);
+  const [resetStep, setResetStep] = useState(1);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [newLoginEmail, setNewLoginEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleRequestOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'OTP code sent to your email!');
+        setResetStep(2);
+      } else {
+        toast.error(data.error || 'Failed to send OTP code');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Network error. Failed to request code.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
+  const handleResetPasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!resetOtp || !newPassword) {
+      toast.error('All fields are required');
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast.error('Passwords do not match');
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const res = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: resetEmail,
+          otp: resetOtp,
+          newPassword,
+          newEmail: newLoginEmail || undefined
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Credentials updated successfully!');
+        setIsResetOpen(false);
+        // Autofill the email with the new email
+        setFormData(prev => ({
+          ...prev,
+          email: newLoginEmail || resetEmail
+        }));
+      } else {
+        toast.error(data.error || 'Failed to reset password');
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Network error. Failed to reset password.');
+    } finally {
+      setResetLoading(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    console.log('Form data being submitted:', formData);
-
     try {
-      // For demo purposes, skip API and use direct authentication
-      const validCredentials = {
-        admin: { email: 'admin@highlanders.com', password: 'admin123' },
-        student: { email: 'student@highlanders.com', password: 'password' },
-      };
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
 
-      const expectedCredentials = validCredentials[formData.role];
-      
-      if (formData.email === expectedCredentials.email && formData.password === expectedCredentials.password) {
+      const result = await response.json();
+
+      if (result.success) {
         // Store authentication token
-        localStorage.setItem('authToken', 'mock-token-' + Date.now());
-        localStorage.setItem('userRole', formData.role);
+        localStorage.setItem('authToken', result.data.token);
+        localStorage.setItem('userRole', result.data.user.role);
         
         toast.success(`Welcome back, ${formData.role}!`);
         
@@ -51,7 +133,7 @@ export default function LoginPage() {
           router.push('/student');
         }
       } else {
-        toast.error('Invalid credentials. Please check your email and password.');
+        toast.error(result.error || 'Invalid credentials. Please check your email and password.');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -140,7 +222,7 @@ export default function LoginPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
-                  placeholder={formData.role === 'admin' ? 'admin@highlanders.com' : 'student@highlanders.com'}
+                  placeholder={formData.role === 'admin' ? 'admin@example.com' : 'student@example.com'}
                 />
               </div>
             </div>
@@ -178,7 +260,6 @@ export default function LoginPage() {
               </div>
             </div>
 
-            {/* Remember Me & Forgot Password */}
             <div className="flex items-center justify-between">
               <label className="flex items-center">
                 <input
@@ -187,9 +268,17 @@ export default function LoginPage() {
                 />
                 <span className="ml-2 text-sm text-gray-600">Remember me</span>
               </label>
-              <a href="#" className="text-sm text-primary-sunset hover:text-primary-wave transition-colors">
+              <button
+                type="button"
+                onClick={() => {
+                  setResetEmail(formData.email);
+                  setResetStep(1);
+                  setIsResetOpen(true);
+                }}
+                className="text-sm text-primary-sunset hover:text-primary-wave transition-colors font-semibold"
+              >
                 Forgot password?
-              </a>
+              </button>
             </div>
 
             {/* Submit Button */}
@@ -202,14 +291,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-            <p className="text-xs text-gray-600 text-center mb-2">Demo Credentials:</p>
-            <div className="text-xs text-gray-500 space-y-1">
-              <p><strong>Student:</strong> student@highlanders.com / password</p>
-              <p><strong>Admin:</strong> admin@highlanders.com / admin123</p>
-            </div>
-          </div>
         </motion.div>
 
         {/* Back to Home */}
@@ -227,6 +308,201 @@ export default function LoginPage() {
           </a>
         </motion.div>
       </motion.div>
+
+      {/* Forgot Password / Change Credentials Modal */}
+      {isResetOpen && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in animate-duration-200">
+          <div className="bg-white rounded-3xl border border-slate-100 shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-[#0A1128] to-[#101b3f] text-white p-6 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
+                  <Key className="w-5 h-5 text-primary-sunset" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Reset Credentials</h3>
+                  <p className="text-[10px] text-gray-300 mt-0.5">Change password or login email via OTP</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsResetOpen(false)}
+                className="text-white/60 hover:text-white transition-colors p-1"
+                type="button"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Step 1: Request OTP */}
+            {resetStep === 1 ? (
+              <form onSubmit={handleRequestOtp} className="p-6 space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Your Registered Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-semibold text-slate-700"
+                      placeholder="student@highlanders.com"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1.5 font-medium leading-normal">
+                    Enter the email assigned to your account. We will send a 6-digit verification code to this address.
+                  </p>
+                </div>
+
+                <div className="pt-4 flex justify-end space-x-3">
+                  <button
+                    type="button"
+                    onClick={() => setIsResetOpen(false)}
+                    className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 rounded-xl transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={resetLoading || !resetEmail}
+                    className="px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {resetLoading ? 'Sending OTP...' : 'Send Verification Code'}
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* Step 2: Verify OTP and Enter New Credentials */
+              <form onSubmit={handleResetPasswordSubmit} className="p-6 space-y-4 max-h-[60vh] overflow-y-auto scrollbar-thin">
+                {/* OTP Code */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    6-Digit Verification Code *
+                  </label>
+                  <div className="relative">
+                    <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type="text"
+                      required
+                      maxLength={6}
+                      value={resetOtp}
+                      onChange={(e) => setResetOtp(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-mono font-bold tracking-widest text-slate-700 text-center"
+                      placeholder="123456"
+                    />
+                  </div>
+                </div>
+
+                {/* New Username / Email */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    New Login Email / Username (Optional)
+                  </label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type="email"
+                      value={newLoginEmail}
+                      onChange={(e) => setNewLoginEmail(e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-semibold text-slate-700"
+                      placeholder="new.email@example.com (Keep blank to reuse current)"
+                    />
+                  </div>
+                  <p className="text-[10px] text-gray-400 mt-1 font-medium">Leave empty to keep using your current email address as login.</p>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    New Password *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type={showNewPassword ? "text" : "password"}
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-semibold text-slate-700"
+                      placeholder="Enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-4 w-4 text-slate-400 hover:text-slate-650" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-slate-400 hover:text-slate-655" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                    Confirm New Password *
+                  </label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                    <input
+                      type={showConfirmPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      className="w-full pl-10 pr-10 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-semibold text-slate-700"
+                      placeholder="Re-enter new password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute inset-y-0 right-0 pr-3.5 flex items-center"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-4 w-4 text-slate-400 hover:text-slate-650" />
+                      ) : (
+                        <Eye className="h-4 w-4 text-slate-400 hover:text-slate-655" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Footer buttons */}
+                <div className="pt-4 flex justify-between items-center">
+                  <button
+                    type="button"
+                    onClick={() => setResetStep(1)}
+                    className="text-xs text-primary-sunset hover:underline font-bold"
+                  >
+                    ← Re-send code
+                  </button>
+                  
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setIsResetOpen(false)}
+                      className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 rounded-xl transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={resetLoading || !resetOtp || !newPassword || !confirmPassword}
+                      className="px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {resetLoading ? 'Resetting...' : 'Change Credentials'}
+                    </button>
+                  </div>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

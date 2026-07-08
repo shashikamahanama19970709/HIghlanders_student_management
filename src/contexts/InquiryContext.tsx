@@ -4,7 +4,8 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 
 interface InquiryContextType {
   isInquiryModalOpen: boolean;
-  openInquiryModal: () => void;
+  preferredClass: string;
+  openInquiryModal: (className?: string) => void;
   closeInquiryModal: () => void;
 }
 
@@ -24,12 +25,19 @@ interface InquiryProviderProps {
 
 export function InquiryProvider({ children }: InquiryProviderProps) {
   const [isInquiryModalOpen, setIsInquiryModalOpen] = useState(false);
+  const [preferredClass, setPreferredClass] = useState('');
 
-  const openInquiryModal = () => setIsInquiryModalOpen(true);
-  const closeInquiryModal = () => setIsInquiryModalOpen(false);
+  const openInquiryModal = (className?: string) => {
+    setPreferredClass(className || '');
+    setIsInquiryModalOpen(true);
+  };
+  const closeInquiryModal = () => {
+    setPreferredClass('');
+    setIsInquiryModalOpen(false);
+  };
 
   return (
-    <InquiryContext.Provider value={{ isInquiryModalOpen, openInquiryModal, closeInquiryModal }}>
+    <InquiryContext.Provider value={{ isInquiryModalOpen, preferredClass, openInquiryModal, closeInquiryModal }}>
       {children}
     </InquiryContext.Provider>
   );

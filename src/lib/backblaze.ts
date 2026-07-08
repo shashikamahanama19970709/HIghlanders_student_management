@@ -2,14 +2,14 @@ import AWS from 'aws-sdk';
 import { FileUpload } from '@/types';
 
 const B2 = new AWS.S3({
-  endpoint: process.env.BACKBLAZE_ENDPOINT,
-  accessKeyId: process.env.BACKBLAZE_ACCESS_KEY_ID,
-  secretAccessKey: process.env.BACKBLAZE_SECRET_ACCESS_KEY,
-  region: 'us-east-1', // Backblaze B2 uses us-east-1
+  endpoint: process.env.B2_ENDPOINT || process.env.BACKBLAZE_ENDPOINT,
+  accessKeyId: process.env.B2_KEY_ID || process.env.BACKBLAZE_ACCESS_KEY_ID,
+  secretAccessKey: process.env.B2_APPLICATION_KEY || process.env.B2_S3_APPLICATION_KEY || process.env.BACKBLAZE_SECRET_ACCESS_KEY,
+  region: process.env.B2_REGION || 'us-east-005',
   signatureVersion: 'v4',
 });
 
-const BUCKET_NAME = process.env.BACKBLAZE_BUCKET_NAME!;
+const BUCKET_NAME = process.env.B2_S3_BUCKET || process.env.B2_BUCKET_NAME || process.env.BACKBLAZE_BUCKET_NAME || 'Taekwondo';
 
 export class BackblazeService {
   /**
@@ -20,7 +20,9 @@ export class BackblazeService {
     fileName: string,
     mimeType: string
   ): Promise<FileUpload> {
-    const fileKey = `uploads/${Date.now()}-${fileName}`;
+    // Sanitize filename: replace spaces and special characters to avoid URL encoding issues
+    const sanitizedName = fileName.replace(/\s+/g, '_').replace(/[^a-zA-Z0-9._-]/g, '');
+    const fileKey = `uploads/${Date.now()}-${sanitizedName}`;
 
     const params: AWS.S3.PutObjectRequest = {
       Bucket: BUCKET_NAME,
@@ -50,9 +52,11 @@ export class BackblazeService {
    * Generate a signed URL for private file access
    */
   static async getSignedUrl(fileKey: string, expiresIn = 3600): Promise<string> {
+    // Decode any already-encoded characters to prevent double-encoding by the SDK
+    const decodedKey = decodeURIComponent(fileKey);
     const params = {
       Bucket: BUCKET_NAME,
-      Key: fileKey,
+      Key: decodedKey,
       Expires: expiresIn,
     };
 

@@ -6,24 +6,26 @@ import { MessageSquare, ArrowRight } from 'lucide-react';
 interface HeroSectionProps {
   onGetStarted: () => void;
   onMakeInquiry: () => void;
+  heroVideoUrl?: string;
 }
 
-const HeroSection = ({ onGetStarted, onMakeInquiry }: HeroSectionProps) => {
+const HeroSection = ({ onGetStarted, onMakeInquiry, heroVideoUrl }: HeroSectionProps) => {
   return (
     <section id="home" className="relative h-screen overflow-hidden">
       {/* Background Video */}
       <div className="absolute inset-0 z-0">
         <video
+          key={heroVideoUrl || 'default'}
           autoPlay
           muted
           loop
           playsInline
           className="w-full h-full object-cover"
         >
-          <source src="/videos/hero-background.mp4" type="video/mp4" />
+          <source src={heroVideoUrl || "/videos/hero-background.mp4"} type="video/mp4" />
           {/* Fallback image */}
           <img
-            src="/images/hero-fallback.jpg"
+            src="/images/hero-fallback.png"
             alt="Taekwondo training"
             className="w-full h-full object-cover"
           />
@@ -65,7 +67,7 @@ const HeroSection = ({ onGetStarted, onMakeInquiry }: HeroSectionProps) => {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="text-6xl md:text-8xl font-black text-white mb-2 font-athletic uppercase tracking-wider text-shadow-lg"
+            className="text-4xl md:text-6xl font-black text-white mb-3 font-athletic uppercase tracking-wider text-shadow-lg"
           >
             Highlanders
           </motion.h1>
@@ -74,9 +76,9 @@ const HeroSection = ({ onGetStarted, onMakeInquiry }: HeroSectionProps) => {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
-            className="text-2xl md:text-4xl font-extrabold mb-8 tracking-widest uppercase font-athletic text-shadow"
+            className="text-base md:text-xl font-bold mb-8 tracking-widest uppercase text-shadow"
           >
-            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-sunset via-red-400 to-primary-wave">
+            <span className="bg-clip-text text-transparent bg-gradient-to-r from-primary-sunset via-orange-400 to-primary-wave">
               Amateur Taekwondo CIC
             </span>
           </motion.h2>
@@ -86,7 +88,7 @@ const HeroSection = ({ onGetStarted, onMakeInquiry }: HeroSectionProps) => {
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-lg md:text-xl text-gray-200/90 mb-10 max-w-2xl mx-auto px-4 font-medium"
+            className="text-sm md:text-base text-gray-200/90 mb-10 max-w-xl mx-auto px-4 font-medium leading-relaxed"
           >
             Building champions in martial arts and life through discipline, respect, and athletic excellence.
           </motion.p>

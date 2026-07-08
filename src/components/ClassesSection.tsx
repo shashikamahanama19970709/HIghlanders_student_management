@@ -1,58 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Clock, Users, Calendar } from 'lucide-react';
 import { Class } from '@/types';
+import { useInquiry } from '@/contexts/InquiryContext';
 
 const ClassesSection = () => {
-  // Mock data - this will come from the API
-  const classes: Class[] = [
-    {
-      _id: '1',
-      name: 'Beginners Taekwondo',
-      schedule: {
-        days: ['Monday', 'Wednesday', 'Friday'],
-        startTime: '18:00',
-        endTime: '19:30',
-      },
-      ageCategory: 'Ages 7-12',
-      description: 'Perfect for young beginners to learn the fundamentals of Taekwondo in a fun and safe environment.',
-      isVisible: true,
-      currentEnrollment: 15,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      _id: '2',
-      name: 'Advanced Taekwondo',
-      schedule: {
-        days: ['Tuesday', 'Thursday'],
-        startTime: '19:00',
-        endTime: '21:00',
-      },
-      ageCategory: 'Ages 13+',
-      description: 'For experienced practitioners looking to advance their skills and prepare for competitions.',
-      isVisible: true,
-      currentEnrollment: 12,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-    {
-      _id: '3',
-      name: 'Adult Fitness Taekwondo',
-      schedule: {
-        days: ['Monday', 'Wednesday', 'Saturday'],
-        startTime: '20:00',
-        endTime: '21:30',
-      },
-      ageCategory: 'Ages 18+',
-      description: 'Combine martial arts training with fitness for a comprehensive workout experience.',
-      isVisible: true,
-      currentEnrollment: 8,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    },
-  ];
+  const [classes, setClasses] = useState<Class[]>([]);
+  const { openInquiryModal } = useInquiry();
+
+  useEffect(() => {
+    const loadWebClasses = async () => {
+      try {
+        const response = await fetch('/api/classes');
+        const result = await response.json();
+        if (result.success) {
+          const visible = (result.data || []).filter((c: Class) => c.showOnWeb === true);
+          setClasses(visible);
+        }
+      } catch (err) {
+        console.error('Error fetching visible classes:', err);
+      }
+    };
+    loadWebClasses();
+  }, []);
+
+  if (classes.length === 0) return null;
 
   return (
     <section id="classes" className="section-gradient py-24">
@@ -124,6 +98,7 @@ const ClassesSection = () => {
                 <motion.button
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
+                  onClick={() => openInquiryModal(classItem.name)}
                   className="w-full btn-primary text-center py-3.5"
                 >
                   Join This Class

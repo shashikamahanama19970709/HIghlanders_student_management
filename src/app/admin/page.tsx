@@ -1,13 +1,34 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Users, Calendar, DollarSign, TrendingUp } from 'lucide-react';
+import { Users, Calendar, DollarSign, TrendingUp, Clock, FileText } from 'lucide-react';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import toast from 'react-hot-toast';
 
 interface DashboardStats {
   totalMembers: number;
   activeClasses: number;
   pendingApplications: number;
   monthlyRevenue: number;
+}
+
+interface RecentApplication {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  selectedClass: string;
+  status: string;
+  createdAt: string;
+}
+
+interface TodayClass {
+  id: string;
+  name: string;
+  schedule: any;
+  currentEnrollment: number;
+  maxCapacity: number;
+  ageCategory: string;
 }
 
 export default function AdminDashboard() {
@@ -17,28 +38,86 @@ export default function AdminDashboard() {
     pendingApplications: 0,
     monthlyRevenue: 0,
   });
+  const [recentApplications, setRecentApplications] = useState<RecentApplication[]>([]);
+  const [todaysClasses, setTodaysClasses] = useState<TodayClass[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch dashboard stats
-    const fetchStats = async () => {
+    const fetchDashboard = async () => {
       try {
-        // Mock data for now
-        setStats({
-          totalMembers: 156,
-          activeClasses: 12,
-          pendingApplications: 8,
-          monthlyRevenue: 15600,
+        const res = await fetch('/api/admin/dashboard', {
+          headers: { 'Authorization': `Bearer ${localStorage.getItem('authToken')}` }
         });
+        const data = await res.json();
+        if (data.success) {
+          setStats({
+            totalMembers: data.data.totalMembers,
+            activeClasses: data.data.activeClasses,
+            pendingApplications: data.data.pendingApplications,
+            monthlyRevenue: data.data.monthlyRevenue,
+          });
+          setRecentApplications(data.data.recentApplications || []);
+          setTodaysClasses(data.data.todaysClasses || []);
+        } else {
+          toast.error('Failed to load dashboard data');
+        }
       } catch (error) {
-        console.error('Error fetching stats:', error);
+        console.error('Error fetching dashboard:', error);
+        toast.error('Network error loading dashboard');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
+    fetchDashboard();
   }, []);
+
+  // Helper to get initials
+  const getInitials = (first: string, last: string) => {
+    return `${(first || '')[0] || ''}${(last || '')[0] || ''}`.toUpperCase();
+  };
+
+  // Helper to format relative time
+  const getRelativeTime = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'Just now';
+    if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? 's' : ''} ago`;
+    if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+    if (diffDays < 7) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+    return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+  };
+
+  // Helper to extract time from schedule
+  const getScheduleTime = (schedule: any) => {
+    if (typeof schedule === 'string') {
+      // Try to extract time portion like "4:00 PM - 5:30 PM"
+      const timeMatch = schedule.match(/\d{1,2}:\d{2}\s*(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s*(?:AM|PM)/i);
+      return timeMatch ? timeMatch[0] : schedule;
+    }
+    if (schedule?.time) return schedule.time;
+    if (schedule?.startTime && schedule?.endTime) return `${schedule.startTime} - ${schedule.endTime}`;
+    return 'Time TBD';
+  };
+
+  // Status badge styling
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'bg-amber-50 text-amber-700 border-amber-100';
+      case 'approved':
+        return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+      case 'rejected':
+        return 'bg-red-50 text-red-700 border-red-100';
+      default:
+        return 'bg-gray-50 text-gray-600 border-gray-100';
+    }
+  };
 
   const statCards = [
     {
@@ -47,7 +126,7 @@ export default function AdminDashboard() {
       icon: Users,
       iconColor: 'text-primary-wave',
       iconBg: 'bg-primary-wave/10',
-      change: '+12% this month',
+      change: `${stats.totalMembers} registered`,
       changeType: 'positive',
     },
     {
@@ -56,7 +135,7 @@ export default function AdminDashboard() {
       icon: Calendar,
       iconColor: 'text-emerald-500',
       iconBg: 'bg-emerald-50',
-      change: '+2 new this week',
+      change: `${stats.activeClasses} running`,
       changeType: 'positive',
     },
     {
@@ -65,8 +144,8 @@ export default function AdminDashboard() {
       icon: TrendingUp,
       iconColor: 'text-primary-sunset',
       iconBg: 'bg-primary-sunset/10',
-      change: '8 applications',
-      changeType: 'warning',
+      change: `${stats.pendingApplications} to review`,
+      changeType: stats.pendingApplications > 0 ? 'warning' : 'positive',
     },
     {
       title: 'Monthly Revenue',
@@ -74,18 +153,13 @@ export default function AdminDashboard() {
       icon: DollarSign,
       iconColor: 'text-purple-500',
       iconBg: 'bg-purple-50',
-      change: '+8% vs last month',
+      change: new Date().toLocaleString('default', { month: 'long' }),
       changeType: 'positive',
     },
   ];
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary-sunset"></div>
-        <div className="ml-3 text-sm font-semibold text-slate-500">Loading dashboard data...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -137,105 +211,74 @@ export default function AdminDashboard() {
           </div>
           
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 text-sm">
-                  JS
+            {recentApplications.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <FileText className="w-6 h-6 text-gray-300" />
                 </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">John Smith</p>
-                  <p className="text-xs text-gray-500 font-medium">Beginners Taekwondo</p>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">2 hours ago</p>
-                </div>
+                <p className="text-sm font-semibold text-gray-400">No applications yet</p>
+                <p className="text-xs text-gray-400 mt-1">New applications will appear here</p>
               </div>
-              <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Pending
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 text-sm">
-                  SJ
+            ) : (
+              recentApplications.map((app) => (
+                <div key={app.id} className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+                  <div className="flex items-center space-x-3.5">
+                    <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 text-sm">
+                      {getInitials(app.firstName, app.lastName)}
+                    </div>
+                    <div>
+                      <p className="font-bold text-gray-900 text-sm">{app.firstName} {app.lastName}</p>
+                      <p className="text-xs text-gray-500 font-medium">{app.selectedClass}</p>
+                      <p className="text-[10px] text-gray-400 font-semibold mt-0.5">{getRelativeTime(app.createdAt)}</p>
+                    </div>
+                  </div>
+                  <span className={`px-3 py-1 border text-[10px] font-bold rounded-full uppercase tracking-wider ${getStatusBadge(app.status)}`}>
+                    {app.status}
+                  </span>
                 </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">Sarah Johnson</p>
-                  <p className="text-xs text-gray-500 font-medium">Advanced Taekwondo</p>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">5 hours ago</p>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-amber-50 text-amber-700 border border-amber-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Pending
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="flex items-center space-x-3.5">
-                <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center font-bold text-slate-600 text-sm">
-                  MW
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">Mike Wilson</p>
-                  <p className="text-xs text-gray-500 font-medium">Adult Fitness Taekwondo</p>
-                  <p className="text-[10px] text-gray-400 font-semibold mt-0.5">1 day ago</p>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Approved
-              </span>
-            </div>
+              ))
+            )}
           </div>
         </div>
 
-        {/* Upcoming Classes */}
+        {/* Today's Classes */}
         <div className="bg-white rounded-2xl border border-gray-150 p-7 shadow-sm">
           <div className="flex justify-between items-center mb-6 border-b pb-4">
-            <h2 className="text-lg font-bold text-gray-900 tracking-wide uppercase font-athletic">Today's Classes</h2>
+            <h2 className="text-lg font-bold text-gray-900 tracking-wide uppercase font-athletic">Today&apos;s Classes</h2>
             <a href="/admin/classes" className="text-xs font-bold text-primary-wave hover:text-primary-sunset transition-colors">View Schedule</a>
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="space-y-1">
-                <p className="font-bold text-gray-900 text-sm">Beginners Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-3">
-                  <span>4:00 PM - 5:30 PM</span>
-                  <span>•</span>
-                  <span>15 enrolled</span>
+            {todaysClasses.length === 0 ? (
+              <div className="text-center py-8">
+                <div className="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center mx-auto mb-3">
+                  <Calendar className="w-6 h-6 text-gray-300" />
                 </div>
+                <p className="text-sm font-semibold text-gray-400">No classes today</p>
+                <p className="text-xs text-gray-400 mt-1">
+                  {new Date().toLocaleDateString(undefined, { weekday: 'long' })} — check the schedule for upcoming classes
+                </p>
               </div>
-              <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Today
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="space-y-1">
-                <p className="font-bold text-gray-900 text-sm">Advanced Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-3">
-                  <span>6:00 PM - 8:00 PM</span>
-                  <span>•</span>
-                  <span>12 enrolled</span>
+            ) : (
+              todaysClasses.map((cls) => (
+                <div key={cls.id} className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
+                  <div className="space-y-1">
+                    <p className="font-bold text-gray-900 text-sm">{cls.name}</p>
+                    <div className="flex items-center text-xs text-gray-500 font-semibold space-x-3">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {getScheduleTime(cls.schedule)}
+                      </span>
+                      <span>•</span>
+                      <span>{cls.currentEnrollment}{cls.maxCapacity ? `/${cls.maxCapacity}` : ''} enrolled</span>
+                    </div>
+                  </div>
+                  <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
+                    Today
+                  </span>
                 </div>
-              </div>
-              <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Today
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between border-b border-slate-50 pb-4 last:border-b-0 last:pb-0">
-              <div className="space-y-1">
-                <p className="font-bold text-gray-900 text-sm">Adult Fitness Taekwondo</p>
-                <div className="flex items-center text-xs text-gray-500 font-semibold space-x-3">
-                  <span>8:00 PM - 9:30 PM</span>
-                  <span>•</span>
-                  <span>8 enrolled</span>
-                </div>
-              </div>
-              <span className="px-3 py-1 bg-primary-wave/10 text-primary-wave border border-primary-wave/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
-                Today
-              </span>
-            </div>
+              ))
+            )}
           </div>
         </div>
       </div>

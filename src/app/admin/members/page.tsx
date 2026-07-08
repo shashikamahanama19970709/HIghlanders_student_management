@@ -13,10 +13,14 @@ import {
   Users, 
   Clock, 
   CheckCircle2, 
-  XCircle 
+  XCircle,
+  Key,
+  Lock
 } from 'lucide-react';
 import { MemberRequest } from '@/types';
+import LoadingOverlay from '@/components/LoadingOverlay';
 import toast from 'react-hot-toast';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 export default function AdminMembers() {
   const [members, setMembers] = useState<MemberRequest[]>([]);
@@ -24,6 +28,68 @@ export default function AdminMembers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+
+  // Set credentials modal state
+  const [isCredsOpen, setIsCredsOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<MemberRequest | null>(null);
+  const [credsEmail, setCredsEmail] = useState('');
+  const [credsPassword, setCredsPassword] = useState('');
+  const [credsSaving, setCredsSaving] = useState(false);
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'info' | 'success' | 'warning';
+    confirmText?: string;
+  }>({
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const handleOpenCredentialsModal = (member: MemberRequest) => {
+    setSelectedMember(member);
+    setCredsEmail(member.email);
+    // Generate a random 8-character password
+    const randPass = Math.random().toString(36).substring(2, 10);
+    setCredsPassword(randPass);
+    setIsCredsOpen(true);
+  };
+
+  const handleSaveCredentials = async () => {
+    if (!selectedMember || !credsEmail || !credsPassword) {
+      toast.error('Email and password are required');
+      return;
+    }
+    setCredsSaving(true);
+    const toastId = toast.loading('Setting credentials...');
+    try {
+      const res = await fetch('/api/members/credentials', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          memberId: selectedMember._id,
+          email: credsEmail,
+          password: credsPassword
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success(data.message || 'Credentials successfully set!', { id: toastId });
+        setIsCredsOpen(false);
+        fetchMembers();
+      } else {
+        toast.error(data.error || 'Failed to set credentials', { id: toastId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Network error. Failed to set credentials.', { id: toastId });
+    } finally {
+      setCredsSaving(false);
+    }
+  };
 
   useEffect(() => {
     fetchMembers();
@@ -46,39 +112,50 @@ export default function AdminMembers() {
     }
   };
 
-  const handleStatusUpdate = async (memberId: string, status: 'approved' | 'rejected') => {
-    const confirmationText = status === 'approved' 
-      ? 'Are you sure you want to approve this applicant? This will create a student account.' 
+  const handleStatusUpdate = (memberId: string, status: 'approved' | 'rejected') => {
+    const title = status === 'approved' ? 'Approve Applicant' : 'Reject Applicant';
+    const message = status === 'approved'
+      ? 'Are you sure you want to approve this applicant? This will automatically generate a student user login account.'
       : 'Are you sure you want to reject this applicant?';
+    const confirmText = status === 'approved' ? 'Approve' : 'Reject';
+    const type = status === 'approved' ? 'success' : 'danger';
 
-    if (!confirm(confirmationText)) return;
+    setConfirmConfig({
+      title,
+      message,
+      confirmText,
+      type,
+      onConfirm: async () => {
+        setConfirmOpen(false);
+        setActionLoadingId(memberId);
+        const toastId = toast.loading(status === 'approved' ? 'Approving application...' : 'Rejecting application...');
 
-    setActionLoadingId(memberId);
-    const toastId = toast.loading(status === 'approved' ? 'Approving application...' : 'Rejecting application...');
+        try {
+          const response = await fetch('/api/members', {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ id: memberId, status }),
+          });
+          
+          const result = await response.json();
 
-    try {
-      const response = await fetch('/api/members', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ id: memberId, status }),
-      });
-      
-      const result = await response.json();
-
-      if (result.success) {
-        toast.success(result.message || `Member request successfully ${status}!`, { id: toastId });
-        fetchMembers();
-      } else {
-        toast.error(result.error || 'Failed to update status', { id: toastId });
+          if (result.success) {
+            toast.success(result.message || `Member request successfully ${status}!`, { id: toastId });
+            fetchMembers();
+          } else {
+            toast.error(result.error || 'Failed to update status', { id: toastId });
+          }
+        } catch (error) {
+          console.error('Error updating member status:', error);
+          toast.error('An error occurred. Please check network connection.', { id: toastId });
+        } finally {
+          setActionLoadingId(null);
+        }
       }
-    } catch (error) {
-      console.error('Error updating member status:', error);
-      toast.error('An error occurred. Please check network connection.', { id: toastId });
-    } finally {
-      setActionLoadingId(null);
-    }
+    });
+    setConfirmOpen(true);
   };
 
   const filteredMembers = members.filter(member => {
@@ -101,12 +178,7 @@ export default function AdminMembers() {
   const stats = getStats();
 
   if (loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-96 space-y-4">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-sunset"></div>
-        <div className="text-sm font-semibold text-slate-500">Loading member requests...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -307,6 +379,14 @@ export default function AdminMembers() {
                           <span>Reject</span>
                         </button>
                       </div>
+                    ) : member.status === 'approved' ? (
+                      <button
+                        onClick={() => handleOpenCredentialsModal(member)}
+                        className="flex items-center space-x-1 px-3.5 py-2 bg-[#E35E1C]/10 text-[#E35E1C] hover:bg-[#E35E1C]/20 border border-[#E35E1C]/25 rounded-xl text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
+                      >
+                        <Key className="w-3.5 h-3.5" />
+                        <span>Set Credentials</span>
+                      </button>
                     ) : (
                       <span className="text-xs font-bold text-gray-400 italic">No actions pending</span>
                     )}
@@ -324,6 +404,104 @@ export default function AdminMembers() {
           </div>
         )}
       </div>
+
+      {/* Set Credentials Modal */}
+      {isCredsOpen && selectedMember && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in animate-duration-200">
+          <div className="bg-white rounded-3xl border border-gray-100 shadow-2xl max-w-md w-full overflow-hidden transform transition-all duration-300 scale-100">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-[#0A1128] to-[#101b3f] text-white p-6 flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center border border-white/20">
+                  <Key className="w-5 h-5 text-primary-sunset" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base leading-tight">Set Credentials</h3>
+                  <p className="text-[10px] text-gray-300 mt-0.5">Account settings for {selectedMember.firstName} {selectedMember.lastName}</p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsCredsOpen(false)}
+                className="text-white/60 hover:text-white transition-colors p-1"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Login Email (Username)
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                  <input
+                    type="email"
+                    value={credsEmail}
+                    onChange={(e) => setCredsEmail(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-semibold text-slate-700"
+                    placeholder="student@example.com"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1 font-medium">This will be the student's username to log in.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" />
+                  <input
+                    type="text"
+                    value={credsPassword}
+                    onChange={(e) => setCredsPassword(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-sunset/20 focus:border-primary-sunset transition-all font-mono text-slate-700 font-bold"
+                    placeholder="Enter password"
+                  />
+                </div>
+                <p className="text-[10px] text-gray-400 mt-1 font-medium">An auto-generated password is provided. You can customize it.</p>
+              </div>
+
+              <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 flex items-start space-x-3">
+                <Mail className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-800 leading-relaxed font-medium">
+                  Once saved, an email notification containing these credentials and the login portal link will be automatically sent to <strong>{credsEmail}</strong>.
+                </p>
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="px-6 py-4.5 bg-slate-50 border-t border-gray-100 flex justify-end space-x-3">
+              <button
+                onClick={() => setIsCredsOpen(false)}
+                disabled={credsSaving}
+                className="px-4 py-2 text-xs font-bold text-slate-500 hover:text-slate-700 hover:bg-slate-100/50 rounded-xl transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveCredentials}
+                disabled={credsSaving || !credsEmail || !credsPassword}
+                className="px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span>{credsSaving ? 'Saving...' : 'Save & Inform Student'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <ConfirmationDialog
+        isOpen={confirmOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmOpen(false)}
+        type={confirmConfig.type}
+        confirmText={confirmConfig.confirmText}
+      />
     </div>
   );
 }

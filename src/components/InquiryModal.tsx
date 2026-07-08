@@ -1,9 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, User, Mail, Phone, MessageSquare, Send } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useInquiry } from '@/contexts/InquiryContext';
+import { Class } from '@/types';
 
 interface InquiryModalProps {
   isOpen: boolean;
@@ -19,6 +21,9 @@ interface InquiryFormData {
 }
 
 const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
+  const { preferredClass } = useInquiry();
+  const [availableClasses, setAvailableClasses] = useState<Class[]>([]);
+  const [selectedClass, setSelectedClass] = useState('');
   const [formData, setFormData] = useState<InquiryFormData>({
     name: '',
     email: '',
@@ -27,6 +32,37 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
     message: '',
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch classes dynamically
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        const res = await fetch('/api/classes');
+        const data = await res.json();
+        if (data.success) {
+          setAvailableClasses(data.data || []);
+        }
+      } catch (err) {
+        console.error('Error loading classes for inquiry:', err);
+      }
+    };
+    if (isOpen) {
+      loadClasses();
+    }
+  }, [isOpen]);
+
+  // Pre-select training class if chosen
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedClass(preferredClass || '');
+      if (preferredClass) {
+        setFormData(prev => ({
+          ...prev,
+          subject: `Inquiry regarding ${preferredClass}`
+        }));
+      }
+    }
+  }, [isOpen, preferredClass]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -47,7 +83,7 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, preferredClass: selectedClass }),
       });
 
       if (response.ok) {
@@ -186,6 +222,25 @@ const InquiryModal = ({ isOpen, onClose }: InquiryModalProps) => {
                   Inquiry Details
                 </h3>
                 <div className="space-y-4">
+                  <div>
+                    <label htmlFor="preferredClass" className="block text-sm font-medium text-gray-700 mb-1">
+                      Preferred Training Class
+                    </label>
+                    <select
+                      id="preferredClass"
+                      name="preferredClass"
+                      value={selectedClass}
+                      onChange={(e) => setSelectedClass(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent font-semibold text-slate-700 bg-white"
+                    >
+                      <option value="">-- Select a Class (Optional) --</option>
+                      {availableClasses.map((c) => (
+                        <option key={c._id} value={c.name}>
+                          {c.name} ({c.ageCategory})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                   <div>
                     <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                       Subject *

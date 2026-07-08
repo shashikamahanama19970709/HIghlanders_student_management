@@ -33,10 +33,10 @@ export default function StudentLayout({
               />
             </div>
             <div>
-              <h1 className="text-lg font-black font-athletic tracking-wider uppercase leading-none text-white">
+              <h1 className="text-[14px] font-black tracking-widest uppercase leading-none text-white">
                 Highlanders
               </h1>
-              <span className="text-[10px] text-primary-wave font-bold uppercase tracking-widest">
+              <span className="text-[9px] text-primary-wave font-bold uppercase tracking-widest mt-0.5 inline-block">
                 Student Portal
               </span>
             </div>
@@ -106,7 +106,7 @@ export default function StudentLayout({
           </header>
           
           {/* Dynamic Content */}
-          <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+          <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 relative">
             {children}
           </main>
 

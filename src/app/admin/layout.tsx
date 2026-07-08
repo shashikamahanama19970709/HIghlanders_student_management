@@ -1,6 +1,6 @@
 'use client';
 
-import { Home, Calendar, Users, Shield, Settings, Mail, LogOut, ShieldAlert } from 'lucide-react';
+import { Home, Calendar, Users, Shield, Settings, Mail, LogOut, ShieldAlert, CreditCard } from 'lucide-react';
 import { redirect, usePathname } from 'next/navigation';
 import { logout } from '@/utils/auth';
 
@@ -15,6 +15,7 @@ export default function AdminLayout({
     { name: 'Dashboard', href: '/admin', icon: Home },
     { name: 'Classes', href: '/admin/classes', icon: Calendar },
     { name: 'Members', href: '/admin/members', icon: Users },
+    { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
     { name: 'Masters', href: '/admin/masters', icon: Shield },
     { name: 'Inquiries', href: '/admin/inquiries', icon: Mail },
     { name: 'Settings', href: '/admin/settings', icon: Settings },
@@ -35,10 +36,10 @@ export default function AdminLayout({
               />
             </div>
             <div>
-              <h1 className="text-lg font-black font-athletic tracking-wider uppercase leading-none text-white">
+              <h1 className="text-[14px] font-black tracking-widest uppercase leading-none text-white">
                 Highlanders
               </h1>
-              <span className="text-[10px] text-primary-wave font-bold uppercase tracking-widest">
+              <span className="text-[9px] text-primary-wave font-bold uppercase tracking-widest mt-0.5 inline-block">
                 Admin Panel
               </span>
             </div>
@@ -108,7 +109,7 @@ export default function AdminLayout({
           </header>
           
           {/* Dynamic Content */}
-          <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50">
+          <main className="flex-1 overflow-y-auto p-8 bg-slate-50/50 relative">
             {children}
           </main>
 

@@ -64,8 +64,15 @@ export class AuthService {
     const decoded = this.verifyToken(token);
     if (!decoded) return null;
 
-    // This would typically query the database
-    // For now, return null - implement database lookup
-    return null;
+    try {
+      const { getDatabase } = await import('@/lib/mongodb');
+      const db = await getDatabase();
+      // In route.ts login signs { userId: loggedInUser.email }
+      const user = await db.collection('users').findOne({ email: decoded.userId });
+      return user as any as User;
+    } catch (error) {
+      console.error('Error fetching user from token:', error);
+      return null;
+    }
   }
 }

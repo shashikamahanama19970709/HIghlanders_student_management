@@ -3,12 +3,18 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, Upload, User, Award, X } from 'lucide-react';
 import { Master } from '@/types';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import toast from 'react-hot-toast';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 export default function AdminMasters() {
   const [masters, setMasters] = useState<Master[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingMaster, setEditingMaster] = useState<Master | null>(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [masterToDelete, setMasterToDelete] = useState<string | null>(null);
   const [formData, setFormData] = useState<Partial<Master>>({
     name: '',
     title: '',
@@ -16,6 +22,7 @@ export default function AdminMasters() {
     rank: '',
     certifications: [],
     image: undefined,
+    showOnWeb: false,
   });
 
   useEffect(() => {
@@ -77,24 +84,33 @@ export default function AdminMasters() {
     }
   };
 
-  const handleDelete = async (masterId: string) => {
-    if (confirm('Are you sure you want to delete this master?')) {
-      try {
-        const response = await fetch(`/api/masters?_id=${masterId}`, {
-          method: 'DELETE',
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          setMasters(masters.filter(m => m._id !== masterId));
-        } else {
-          alert(result.error || 'Failed to delete master');
-        }
-      } catch (error) {
-        console.error('Error deleting master:', error);
-        alert('Failed to delete master. Please try again.');
+  const handleDelete = (masterId: string) => {
+    setMasterToDelete(masterId);
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!masterToDelete) return;
+    setConfirmOpen(false);
+    const toastId = toast.loading('Deleting master...');
+    try {
+      const response = await fetch(`/api/masters?_id=${masterToDelete}`, {
+        method: 'DELETE',
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        toast.success('Master deleted successfully', { id: toastId });
+        setMasters(masters.filter(m => m._id !== masterToDelete));
+      } else {
+        toast.error(result.error || 'Failed to delete master', { id: toastId });
       }
+    } catch (error) {
+      console.error('Error deleting master:', error);
+      toast.error('Failed to delete master. Please try again.', { id: toastId });
+    } finally {
+      setMasterToDelete(null);
     }
   };
 
@@ -106,6 +122,7 @@ export default function AdminMasters() {
       rank: '',
       certifications: [],
       image: undefined,
+      showOnWeb: false,
     });
   };
 
@@ -115,18 +132,44 @@ export default function AdminMasters() {
     setShowForm(true);
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      // TODO: Implement image upload
-      const imageUrl = URL.createObjectURL(file);
-      setFormData({
-        ...formData,
-        image: {
-          fileKey: file.name,
-          url: imageUrl,
+    if (!file) return;
+
+    setUploadingImage(true);
+    const toastId = toast.loading('Uploading Photo.');
+
+    try {
+      const data = new FormData();
+      data.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
         },
+        body: data,
       });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setFormData(prev => ({
+          ...prev,
+          image: {
+            fileKey: result.data.fileKey,
+            url: result.data.url,
+          }
+        }));
+        toast.success('Photo uploaded to Backblaze successfully!', { id: toastId });
+      } else {
+        toast.error(result.error || 'Failed to upload photo', { id: toastId });
+      }
+    } catch (error) {
+      console.error('Error uploading master photo:', error);
+      toast.error('Failed to upload photo. Please try again.', { id: toastId });
+    } finally {
+      setUploadingImage(false);
     }
   };
 
@@ -149,11 +192,7 @@ export default function AdminMasters() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading masters...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -197,6 +236,17 @@ export default function AdminMasters() {
                   <h3 className="text-xl font-semibold text-gray-900 mb-1">{master.name}</h3>
                   <p className="text-sm text-primary-sunset font-medium mb-2">{master.title}</p>
                   <p className="text-sm text-gray-600 mb-2">{master.rank}</p>
+                  <div className="mb-2">
+                    {master.showOnWeb ? (
+                      <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider rounded-full border border-emerald-200">
+                        Visible on Web
+                      </span>
+                    ) : (
+                      <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider rounded-full border border-slate-200">
+                        Hidden on Web
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex space-x-2">
                   <button
@@ -273,11 +323,13 @@ export default function AdminMasters() {
                       id="master-image-upload"
                     />
                     <label
-                      htmlFor="master-image-upload"
-                      className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                      htmlFor={uploadingImage ? undefined : "master-image-upload"}
+                      className={`flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg transition-colors ${
+                        uploadingImage ? 'opacity-50 cursor-not-allowed bg-gray-50' : 'hover:bg-gray-50 cursor-pointer'
+                      }`}
                     >
-                      <Upload className="w-4 h-4" />
-                      <span>Upload Photo</span>
+                      <Upload className={`w-4 h-4 ${uploadingImage ? 'animate-bounce' : ''}`} />
+                      <span>{uploadingImage ? 'Uploading...' : 'Upload Photo'}</span>
                     </label>
                   </div>
                 </div>
@@ -375,6 +427,20 @@ export default function AdminMasters() {
                 </div>
               </div>
 
+              {/* Display on Website Toggle */}
+              <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-200/60">
+                <input
+                  type="checkbox"
+                  id="showOnWeb"
+                  checked={formData.showOnWeb || false}
+                  onChange={(e) => setFormData({ ...formData, showOnWeb: e.target.checked })}
+                  className="w-4 h-4 text-primary-sunset border-gray-300 rounded focus:ring-primary-sunset focus:ring-2 focus:ring-offset-2 cursor-pointer"
+                />
+                <label htmlFor="showOnWeb" className="text-sm font-semibold text-gray-700 select-none cursor-pointer">
+                  Display this master in "Meet Our Masters" on the website
+                </label>
+              </div>
+
               {/* Form Actions */}
               <div className="flex justify-end space-x-4 pt-4 border-t">
                 <button
@@ -390,7 +456,8 @@ export default function AdminMasters() {
                 </button>
                 <button
                   type="submit"
-                  className="btn-primary"
+                  disabled={uploadingImage}
+                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingMaster ? 'Update Master' : 'Create Master'}
                 </button>
@@ -399,6 +466,19 @@ export default function AdminMasters() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        isOpen={confirmOpen}
+        title="Delete Master"
+        message="Are you sure you want to delete this master? This action cannot be undone."
+        onConfirm={executeDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setMasterToDelete(null);
+        }}
+        type="danger"
+        confirmText="Delete"
+      />
     </div>
   );
 }

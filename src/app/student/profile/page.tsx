@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { User, Mail, Phone, Calendar, MapPin, Upload, Save, Camera } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import toast from 'react-hot-toast';
+import LoadingOverlay from '@/components/LoadingOverlay';
 
 interface StudentProfile {
   firstName: string;
@@ -19,6 +20,7 @@ interface StudentProfile {
   };
   medicalInfo: string;
   profileImage?: string;
+  classIds?: string[];
 }
 
 export default function StudentProfile() {
@@ -26,6 +28,24 @@ export default function StudentProfile() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [selectedClassIds, setSelectedClassIds] = useState<string[]>([]);
+  const [availableClasses, setAvailableClasses] = useState<any[]>([]);
+
+  // Fetch available classes
+  useEffect(() => {
+    const loadClasses = async () => {
+      try {
+        const res = await fetch('/api/classes');
+        const data = await res.json();
+        if (data.success) {
+          setAvailableClasses(data.data || []);
+        }
+      } catch (err) {
+        console.error('Error fetching classes:', err);
+      }
+    };
+    loadClasses();
+  }, []);
 
   const {
     register,
@@ -33,6 +53,7 @@ export default function StudentProfile() {
     watch,
     formState: { errors, isValid },
     reset,
+    setValue,
   } = useForm<StudentProfile>({
     mode: 'onChange',
   });
@@ -43,26 +64,30 @@ export default function StudentProfile() {
 
   const fetchProfile = async () => {
     try {
-      // TODO: Implement profile API
-      const mockProfile: StudentProfile = {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john.doe@example.com',
-        phone: '+44 131 234 5678',
-        dateOfBirth: '1995-06-15',
-        address: '123 Main Street, Edinburgh, EH1 2YZ',
-        emergencyContact: {
-          name: 'Jane Doe',
-          phone: '+44 131 234 5679',
-          relationship: 'Spouse',
-        },
-        medicalInfo: 'No known allergies or medical conditions.',
-        profileImage: '/images/default-avatar.png',
-      };
-      setProfile(mockProfile);
-      reset(mockProfile);
+      const response = await fetch('/api/student/profile', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        }
+      });
+      
+      if (response.status === 401) {
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('userRole');
+        window.location.href = '/login';
+        return;
+      }
+
+      const result = await response.json();
+      if (result.success) {
+        setProfile(result.data);
+        reset(result.data);
+        setSelectedClassIds(result.data.classIds || []);
+      } else {
+        toast.error(result.error || 'Failed to load profile');
+      }
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Network error loading profile');
     } finally {
       setLoading(false);
     }
@@ -71,10 +96,22 @@ export default function StudentProfile() {
   const onSubmit = async (data: StudentProfile) => {
     setSaving(true);
     try {
-      // TODO: Implement profile update API
-      console.log('Updating profile:', data);
-      setProfile(data);
-      toast.success('Profile updated successfully!');
+      const payload = { ...data, classIds: selectedClassIds };
+      const response = await fetch('/api/student/profile', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: JSON.stringify(payload),
+      });
+      const result = await response.json();
+      if (result.success) {
+        setProfile(result.data);
+        toast.success('Profile updated successfully!');
+      } else {
+        toast.error(result.error || 'Failed to update profile');
+      }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile. Please try again.');
@@ -87,11 +124,42 @@ export default function StudentProfile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Limit to 10MB
+    const maxSize = 10 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error('File size exceeds the 10MB limit.');
+      return;
+    }
+
     setUploading(true);
     try {
-      // TODO: Implement image upload API
-      console.log('Uploading image:', file);
-      toast.success('Profile picture updated!');
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('authToken')}`
+        },
+        body: formData,
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        // Set react-hook-form value so it gets submitted with save
+        setValue('profileImage', result.data.fileKey);
+        
+        // Update local preview state
+        if (profile) {
+          setProfile({
+            ...profile,
+            profileImage: result.data.url
+          });
+        }
+        toast.success('Profile picture uploaded successfully! Click Save below to persist.');
+      } else {
+        toast.error(result.error || 'Failed to upload image');
+      }
     } catch (error) {
       console.error('Error uploading image:', error);
       toast.error('Failed to upload image. Please try again.');
@@ -101,11 +169,7 @@ export default function StudentProfile() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading profile...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -349,6 +413,48 @@ export default function StudentProfile() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
                 />
               </div>
+            </div>
+
+            {/* Class Enrollment Multi-Selection */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold mb-2 flex items-center">
+                <Calendar className="w-5 h-5 mr-2 text-primary-sunset" />
+                My Enrolled Classes
+              </h2>
+              <p className="text-xs text-gray-500 mb-4 font-semibold">Select the classes you are currently attending. You can select and enroll in more than one class.</p>
+              
+              {availableClasses.length === 0 ? (
+                <p className="text-sm text-gray-400 italic">No classes available for selection.</p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100">
+                  {availableClasses.map((cls) => {
+                    const isChecked = selectedClassIds.includes(cls._id);
+                    return (
+                      <label key={cls._id} className="flex items-start text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100/50 p-2.5 rounded-lg transition-colors border border-slate-200/50 bg-white shadow-sm">
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedClassIds(prev => [...prev, cls._id]);
+                            } else {
+                              setSelectedClassIds(prev => prev.filter(id => id !== cls._id));
+                            }
+                          }}
+                          className="mr-3 mt-1 rounded border-gray-300 text-primary-sunset focus:ring-primary-sunset w-4 h-4 cursor-pointer animate-none"
+                        />
+                        <div className="leading-tight">
+                          <p className="font-bold text-slate-800">{cls.name}</p>
+                          <span className="text-[10px] text-primary-sunset uppercase font-extrabold tracking-wider">{cls.ageCategory}</span>
+                          <p className="text-[10px] text-gray-500 font-semibold mt-1">
+                            {cls.schedule.days.join(', ')} ({cls.schedule.startTime} - {cls.schedule.endTime})
+                          </p>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             {/* Save Button */}

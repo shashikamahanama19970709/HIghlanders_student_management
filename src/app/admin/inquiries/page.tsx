@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, User, Calendar, MessageSquare, CheckCircle, Clock, X, Trash2, Eye } from 'lucide-react';
 import toast from 'react-hot-toast';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
 
 interface Inquiry {
   _id: string;
@@ -12,6 +14,7 @@ interface Inquiry {
   phone: string;
   subject: string;
   message: string;
+  preferredClass?: string;
   status: 'pending' | 'in-progress' | 'resolved';
   createdAt: string;
   updatedAt: string;
@@ -22,6 +25,54 @@ export default function AdminInquiries() {
   const [loading, setLoading] = useState(true);
   const [selectedInquiry, setSelectedInquiry] = useState<Inquiry | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [confirmConfig, setConfirmConfig] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    onConfirm: () => void;
+    type?: 'danger' | 'info' | 'success' | 'warning';
+    confirmText?: string;
+  }>({
+    isOpen: false,
+    title: '',
+    message: '',
+    onConfirm: () => {},
+  });
+
+  const handleConvertToStudent = (inquiryId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Add as Student",
+      message: "Are you sure you want to add this inquirer as a student? This will register a student login account, sync member request history, and mark this inquiry as resolved.",
+      type: "success",
+      confirmText: "Add Student",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        const toastId = toast.loading('Converting to student...');
+        try {
+          const response = await fetch('/api/inquiries/convert', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ inquiryId }),
+          });
+
+          const result = await response.json();
+          if (result.success) {
+            toast.success(result.message || 'Student account created successfully!', { id: toastId });
+            setShowDetailsModal(false);
+            fetchInquiries();
+          } else {
+            toast.error(result.error || 'Failed to convert to student', { id: toastId });
+          }
+        } catch (error) {
+          console.error('Error converting to student:', error);
+          toast.error('An error occurred. Please check network connection.', { id: toastId });
+        }
+      }
+    });
+  };
 
   useEffect(() => {
     fetchInquiries();
@@ -70,26 +121,35 @@ export default function AdminInquiries() {
     }
   };
 
-  const handleDelete = async (inquiryId: string) => {
-    if (confirm('Are you sure you want to delete this inquiry?')) {
-      try {
-        const response = await fetch(`/api/inquiries?_id=${inquiryId}`, {
-          method: 'DELETE',
-        });
-        
-        const result = await response.json();
-        
-        if (result.success) {
-          setInquiries(inquiries.filter(inquiry => inquiry._id !== inquiryId));
-          toast.success('Inquiry deleted successfully');
-        } else {
-          toast.error(result.error || 'Failed to delete inquiry');
+  const handleDelete = (inquiryId: string) => {
+    setConfirmConfig({
+      isOpen: true,
+      title: "Delete Inquiry",
+      message: "Are you sure you want to delete this inquiry? This action cannot be undone.",
+      type: "danger",
+      confirmText: "Delete",
+      onConfirm: async () => {
+        setConfirmConfig(prev => ({ ...prev, isOpen: false }));
+        const toastId = toast.loading('Deleting inquiry...');
+        try {
+          const response = await fetch(`/api/inquiries?_id=${inquiryId}`, {
+            method: 'DELETE',
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            setInquiries(inquiries.filter(inquiry => inquiry._id !== inquiryId));
+            toast.success('Inquiry deleted successfully', { id: toastId });
+          } else {
+            toast.error(result.error || 'Failed to delete inquiry', { id: toastId });
+          }
+        } catch (error) {
+          console.error('Error deleting inquiry:', error);
+          toast.error('Failed to delete inquiry', { id: toastId });
         }
-      } catch (error) {
-        console.error('Error deleting inquiry:', error);
-        toast.error('Failed to delete inquiry');
       }
-    }
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -129,11 +189,7 @@ export default function AdminInquiries() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-sunset"></div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -250,30 +306,47 @@ export default function AdminInquiries() {
                     
                     <div className="mb-3">
                       <p className="text-sm font-medium text-gray-700">Subject: {inquiry.subject}</p>
+                      {inquiry.preferredClass && (
+                        <div className="mt-2 mb-2 flex items-center space-x-1.5 bg-sky-50 text-sky-700 text-[10px] font-extrabold uppercase tracking-wider rounded-md border border-sky-150/60 px-2.5 py-1 max-w-max">
+                          Preferred Class: {inquiry.preferredClass}
+                        </div>
+                      )}
                       <p className="text-sm text-gray-600 mt-1 line-clamp-2">{inquiry.message}</p>
                     </div>
                     
-                    <div className="flex items-center space-x-2">
-                      <select
-                        value={inquiry.status}
-                        onChange={(e) => handleStatusUpdate(inquiry._id, e.target.value)}
-                        className="text-sm border border-gray-300 rounded px-2 py-1 focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
-                      >
-                        <option value="pending">Pending</option>
-                        <option value="in-progress">In Progress</option>
-                        <option value="resolved">Resolved</option>
-                      </select>
-                      
-                      <button
-                        onClick={() => {
-                          setSelectedInquiry(inquiry);
-                          setShowDetailsModal(true);
-                        }}
-                        className="text-sm text-primary-sunset hover:text-primary-wave flex items-center space-x-1"
-                      >
-                        <Eye className="w-4 h-4" />
-                        <span>View Details</span>
-                      </button>
+                    <div className="flex items-center space-x-4">
+                      <div className="flex items-center space-x-2">
+                        <select
+                          value={inquiry.status}
+                          onChange={(e) => handleStatusUpdate(inquiry._id, e.target.value)}
+                          className="text-xs border border-gray-300 rounded px-2.5 py-1.5 focus:ring-2 focus:ring-primary-sunset focus:border-transparent font-bold text-slate-700 bg-white"
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="in-progress">In Progress</option>
+                          <option value="resolved">Resolved</option>
+                        </select>
+                        
+                        <button
+                          onClick={() => {
+                            setSelectedInquiry(inquiry);
+                            setShowDetailsModal(true);
+                          }}
+                          className="text-xs text-primary-sunset hover:text-primary-wave flex items-center space-x-1.5 font-bold px-2 py-1.5 rounded-lg hover:bg-slate-50 transition-colors"
+                        >
+                          <Eye className="w-4 h-4" />
+                          <span>View Details</span>
+                        </button>
+                      </div>
+
+                      {inquiry.status !== 'resolved' && (
+                        <button
+                          onClick={() => handleConvertToStudent(inquiry._id)}
+                          className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold flex items-center space-x-1.5 transition-all shadow-sm shadow-emerald-600/5 hover:-translate-y-0.5"
+                        >
+                          <User className="w-3.5 h-3.5" />
+                          <span>Add as Student</span>
+                        </button>
+                      )}
                     </div>
                   </div>
                   
@@ -354,6 +427,17 @@ export default function AdminInquiries() {
                 </div>
               </div>
 
+              {selectedInquiry.preferredClass && (
+                <div className="bg-slate-50 border border-slate-200/60 p-4 rounded-xl">
+                  <h3 className="text-sm font-bold text-slate-800 flex items-center uppercase tracking-wide mb-1">
+                    <Calendar className="w-4 h-4 mr-2 text-primary-sunset" />
+                    Preferred Class Details
+                  </h3>
+                  <p className="text-xs font-semibold text-slate-600">Interested Program: <span className="text-primary-wave font-bold">{selectedInquiry.preferredClass}</span></p>
+                  <p className="text-[10px] text-gray-500 mt-1">This visitor expressed immediate interest in joining this specific training program when submitting their inquiry form.</p>
+                </div>
+              )}
+
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <MessageSquare className="w-5 h-5 mr-2 text-primary-sunset" />
@@ -370,9 +454,18 @@ export default function AdminInquiries() {
                   <p>Last Updated: {formatDate(selectedInquiry.updatedAt)}</p>
                 </div>
                 <div className="flex space-x-2">
+                  {selectedInquiry.status !== 'resolved' && (
+                    <button
+                      onClick={() => handleConvertToStudent(selectedInquiry._id)}
+                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-semibold text-sm flex items-center space-x-1.5 animate-none"
+                    >
+                      <User className="w-4 h-4" />
+                      <span>Add as Student</span>
+                    </button>
+                  )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm text-gray-700"
                   >
                     Close
                   </button>
@@ -382,6 +475,16 @@ export default function AdminInquiries() {
           </motion.div>
         </motion.div>
       )}
+
+      <ConfirmationDialog
+        isOpen={confirmConfig.isOpen}
+        title={confirmConfig.title}
+        message={confirmConfig.message}
+        onConfirm={confirmConfig.onConfirm}
+        onCancel={() => setConfirmConfig(prev => ({ ...prev, isOpen: false }))}
+        type={confirmConfig.type}
+        confirmText={confirmConfig.confirmText}
+      />
     </div>
   );
 }

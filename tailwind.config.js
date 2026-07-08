@@ -21,7 +21,7 @@ module.exports = {
         },
       },
       fontFamily: {
-        athletic: ['Arial Black', 'sans-serif'],
+        athletic: ['Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

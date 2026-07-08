@@ -9,33 +9,12 @@ interface LoginRequest {
   role: 'admin' | 'student';
 }
 
-// Mock users for demonstration (in production, these would come from database)
-const mockUsers = {
-  admin: {
-    email: 'admin@highlanders.com',
-    password: 'admin123',
-    name: 'Admin User',
-    role: 'admin',
-  },
-  student: {
-    email: 'student@highlanders.com',
-    password: 'password',
-    name: 'Student User',
-    role: 'student',
-  },
-};
-
 export async function POST(request: NextRequest) {
   try {
     const body: LoginRequest = await request.json();
     const { email, password, role } = body;
 
-    // Debug logging
-    console.log('Login attempt:', { email, role, passwordLength: password?.length });
-
-    // Validation
     if (!email || !password || !role) {
-      console.log('Validation failed:', { hasEmail: !!email, hasPassword: !!password, hasRole: !!role });
       return NextResponse.json(
         { success: false, error: 'Email, password, and role are required' },
         { status: 400 }
@@ -44,6 +23,21 @@ export async function POST(request: NextRequest) {
 
     // 1. Search for user in database
     const db = await getDatabase();
+
+    // Auto-seed default admin user if none exists
+    const adminExists = await db.collection('users').findOne({ role: 'admin' });
+    if (!adminExists) {
+      console.log('[Auth Seeder] Creating default admin: admin@example.com / 12345');
+      const defaultAdminPassword = await bcrypt.hash('12345', 12);
+      await db.collection('users').insertOne({
+        email: 'admin@example.com',
+        password: defaultAdminPassword,
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date()
+      });
+    }
+
     const dbUser = await db.collection('users').findOne({ email, role });
     
     let isPasswordValid = false;
@@ -55,24 +49,9 @@ export async function POST(request: NextRequest) {
       if (isPasswordValid) {
         loggedInUser = {
           email: dbUser.email,
-          name: dbUser.profile ? `${dbUser.profile.firstName} ${dbUser.profile.lastName}` : dbUser.email,
+          name: dbUser.profile ? `${dbUser.profile.firstName} ${dbUser.profile.lastName}` : 'Admin User',
           role: dbUser.role,
         };
-      }
-    }
-    
-    // 2. Fall back to mock users for demo/testing if not found in DB
-    if (!loggedInUser) {
-      const mockUser = mockUsers[role];
-      if (mockUser && mockUser.email === email) {
-        isPasswordValid = password === mockUser.password;
-        if (isPasswordValid) {
-          loggedInUser = {
-            email: mockUser.email,
-            name: mockUser.name,
-            role: mockUser.role,
-          };
-        }
       }
     }
     

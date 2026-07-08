@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import clientPromise, { getDatabase } from '@/lib/mongodb';
 import { Master } from '@/types';
 import { ObjectId } from 'mongodb';
+import { BackblazeService } from '@/lib/backblaze';
 
 // GET /api/masters - Fetch all masters
 export async function GET() {
@@ -9,9 +10,31 @@ export async function GET() {
     const db = await getDatabase();
     const masters = await db.collection('masters').find({}).toArray();
     
+    // Generate fresh signed URLs for B2 image keys
+    const processedMasters = await Promise.all(
+      masters.map(async (master) => {
+        if (master.image && master.image.fileKey) {
+          try {
+            const signedUrl = await BackblazeService.getSignedUrl(master.image.fileKey);
+            return {
+              ...master,
+              image: {
+                ...master.image,
+                url: signedUrl
+              }
+            };
+          } catch (urlError) {
+            console.error(`Failed to sign URL for master image key ${master.image.fileKey}:`, urlError);
+            return master; // Return original master as fallback
+          }
+        }
+        return master;
+      })
+    );
+
     return NextResponse.json({
       success: true,
-      data: masters,
+      data: processedMasters,
     });
   } catch (error) {
     console.error('Error fetching masters:', error);
@@ -26,7 +49,7 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { name, title, bio, rank, certifications, image } = body;
+    const { name, title, bio, rank, certifications, image, showOnWeb } = body;
 
     // Validation
     if (!name || !title || !bio) {
@@ -45,6 +68,7 @@ export async function POST(request: NextRequest) {
       rank: rank || '',
       certifications: certifications || [],
       image: image || undefined,
+      showOnWeb: showOnWeb || false,
     };
 
     const result = await db.collection('masters').insertOne({
@@ -72,7 +96,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { _id, name, title, bio, rank, certifications, image } = body;
+    const { _id, name, title, bio, rank, certifications, image, showOnWeb } = body;
 
     if (!_id) {
       return NextResponse.json(
@@ -93,9 +117,10 @@ export async function PUT(request: NextRequest) {
     if (rank !== undefined) updateData.rank = rank;
     if (certifications !== undefined) updateData.certifications = certifications;
     if (image !== undefined) updateData.image = image;
+    if (showOnWeb !== undefined) updateData.showOnWeb = showOnWeb;
 
     const result = await db.collection('masters').updateOne(
-      { _id },
+      { _id: new ObjectId(_id) },
       { $set: updateData }
     );
 
@@ -106,7 +131,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedMaster = await db.collection('masters').findOne({ _id });
+    const updatedMaster = await db.collection('masters').findOne({ _id: new ObjectId(_id) });
 
     return NextResponse.json({
       success: true,

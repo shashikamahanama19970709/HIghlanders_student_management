@@ -3,12 +3,17 @@
 import { useEffect, useState } from 'react';
 import { Plus, Edit, Trash2, Users, Clock, Calendar } from 'lucide-react';
 import { Class } from '@/types';
+import LoadingOverlay from '@/components/LoadingOverlay';
+import ConfirmationDialog from '@/components/ConfirmationDialog';
+import toast from 'react-hot-toast';
 
 export default function AdminClasses() {
   const [classes, setClasses] = useState<Class[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingClass, setEditingClass] = useState<Class | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [classToDelete, setClassToDelete] = useState<string | null>(null);
 
   useEffect(() => {
     fetchClasses();
@@ -28,27 +33,101 @@ export default function AdminClasses() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Implement class creation/update
-    setShowForm(false);
-    setEditingClass(null);
-    fetchClasses();
+    try {
+      const formEl = e.currentTarget;
+      const formData = new FormData(formEl);
+      
+      const className = formData.get('className') as string;
+      const ageCategory = formData.get('ageCategory') as string;
+      const description = formData.get('description') as string;
+      const startTime = formData.get('startTime') as string;
+      const endTime = formData.get('endTime') as string;
+      const showOnWeb = formData.get('showOnWeb') === 'on';
+
+      // Gather checked days
+      const days: string[] = [];
+      const checkboxes = formEl.querySelectorAll('input[type="checkbox"][name="days"]');
+      checkboxes.forEach((cb: any) => {
+        if (cb.checked) {
+          days.push(cb.value);
+        }
+      });
+
+      if (days.length === 0) {
+        alert('Please select at least one schedule day');
+        return;
+      }
+
+      const payload = {
+        name: className,
+        ageCategory,
+        description,
+        schedule: {
+          days,
+          startTime,
+          endTime
+        },
+        showOnWeb
+      };
+
+      const method = editingClass ? 'PUT' : 'POST';
+      const body = editingClass ? { ...payload, _id: editingClass._id } : payload;
+
+      const response = await fetch('/api/classes', {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        setShowForm(false);
+        setEditingClass(null);
+        fetchClasses();
+      } else {
+        alert(result.error || 'Failed to save class');
+      }
+    } catch (error) {
+      console.error('Error saving class:', error);
+      alert('Failed to save class. Please try again.');
+    }
   };
 
-  const handleDelete = async (classId: string) => {
-    if (confirm('Are you sure you want to delete this class?')) {
-      // TODO: Implement class deletion
-      fetchClasses();
+  const handleDelete = (classId: string) => {
+    setClassToDelete(classId);
+    setConfirmOpen(true);
+  };
+
+  const executeDelete = async () => {
+    if (!classToDelete) return;
+    setConfirmOpen(false);
+    const toastId = toast.loading('Deleting class...');
+    try {
+      const response = await fetch(`/api/classes?_id=${classToDelete}`, {
+        method: 'DELETE',
+      });
+      const result = await response.json();
+      if (result.success) {
+        toast.success('Class deleted successfully', { id: toastId });
+        fetchClasses();
+      } else {
+        toast.error(result.error || 'Failed to delete class', { id: toastId });
+      }
+    } catch (error) {
+      console.error('Error deleting class:', error);
+      toast.error('Failed to delete class. Please try again.', { id: toastId });
+    } finally {
+      setClassToDelete(null);
     }
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-lg text-gray-600">Loading classes...</div>
-      </div>
-    );
+    return <LoadingOverlay />;
   }
 
   return (
@@ -92,7 +171,18 @@ export default function AdminClasses() {
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-4 font-athletic uppercase tracking-wide">{classItem.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 font-athletic uppercase tracking-wide">{classItem.name}</h3>
+              <div className="mb-4">
+                {classItem.showOnWeb ? (
+                  <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider rounded-full border border-emerald-200">
+                    Visible on Web
+                  </span>
+                ) : (
+                  <span className="inline-block px-2.5 py-0.5 bg-slate-100 text-slate-500 text-[10px] font-bold uppercase tracking-wider rounded-full border border-slate-200">
+                    Hidden on Web
+                  </span>
+                )}
+              </div>
 
               <div className="space-y-3 bg-slate-50/50 p-4 rounded-xl border border-slate-100 mb-4">
                 <div className="flex items-center text-xs font-semibold text-gray-600">
@@ -143,6 +233,7 @@ export default function AdminClasses() {
                 <input
                   type="text"
                   required
+                  name="className"
                   defaultValue={editingClass?.name}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
                   placeholder="e.g. Beginners Taekwondo"
@@ -156,6 +247,7 @@ export default function AdminClasses() {
                 <input
                   type="text"
                   required
+                  name="ageCategory"
                   defaultValue={editingClass?.ageCategory}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
                   placeholder="e.g. Ages 7-12"
@@ -168,6 +260,7 @@ export default function AdminClasses() {
                 </label>
                 <textarea
                   rows={3}
+                  name="description"
                   defaultValue={editingClass?.description}
                   className="w-full px-3.5 py-2.5 text-sm border border-gray-255 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
                   placeholder="Class program details and prerequisites..."
@@ -182,6 +275,7 @@ export default function AdminClasses() {
                   <input
                     type="time"
                     required
+                    name="startTime"
                     defaultValue={editingClass?.schedule.startTime}
                     className="w-full px-3.5 py-2.5 text-sm border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
                   />
@@ -193,6 +287,7 @@ export default function AdminClasses() {
                   <input
                     type="time"
                     required
+                    name="endTime"
                     defaultValue={editingClass?.schedule.endTime}
                     className="w-full px-3.5 py-2.5 text-sm border border-gray-250 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
                   />
@@ -208,6 +303,8 @@ export default function AdminClasses() {
                     <label key={day} className="flex items-center text-sm font-semibold text-slate-600 cursor-pointer">
                       <input
                         type="checkbox"
+                        name="days"
+                        value={day}
                         defaultChecked={editingClass?.schedule.days.includes(day)}
                         className="mr-2 rounded border-gray-300 text-primary-sunset focus:ring-primary-sunset"
                       />
@@ -215,6 +312,20 @@ export default function AdminClasses() {
                     </label>
                   ))}
                 </div>
+              </div>
+
+              {/* Display on Website Toggle */}
+              <div className="flex items-center space-x-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <input
+                  type="checkbox"
+                  id="showOnWeb"
+                  name="showOnWeb"
+                  defaultChecked={editingClass?.showOnWeb ?? false}
+                  className="w-4 h-4 text-primary-sunset border-gray-300 rounded focus:ring-primary-sunset focus:ring-2 focus:ring-offset-2 cursor-pointer"
+                />
+                <label htmlFor="showOnWeb" className="text-sm font-semibold text-gray-700 select-none cursor-pointer">
+                  Display in "Our Training Programs" on website
+                </label>
               </div>
 
               <div className="flex justify-end space-x-3 pt-4 border-t border-gray-100 mt-6">
@@ -239,6 +350,19 @@ export default function AdminClasses() {
           </div>
         </div>
       )}
+
+      <ConfirmationDialog
+        isOpen={confirmOpen}
+        title="Delete Class"
+        message="Are you sure you want to delete this training class? This action cannot be undone."
+        onConfirm={executeDelete}
+        onCancel={() => {
+          setConfirmOpen(false);
+          setClassToDelete(null);
+        }}
+        type="danger"
+        confirmText="Delete"
+      />
     </div>
   );
 }
