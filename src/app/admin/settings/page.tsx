@@ -431,20 +431,74 @@ export default function AdminSettings() {
           <h2 className="text-xl font-semibold mb-6">Operating Hours</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {Object.entries(settings.operatingHours).map(([day, hours]) => (
-              <div key={day}>
-                <label className="block text-sm font-medium text-gray-700 mb-1 capitalize">
-                  {day}
-                </label>
-                <input
-                  type="text"
-                  value={hours}
-                  onChange={(e) => updateOperatingHours(day as keyof typeof settings.operatingHours, e.target.value)}
-                  placeholder="e.g., 09:00 - 17:00"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-sunset focus:border-transparent"
-                />
-              </div>
-            ))}
+            {Object.entries(settings.operatingHours).map(([day, hours]) => {
+              const isOpen = hours !== 'Closed';
+              let startTime = '16:00';
+              let endTime = '21:30';
+              if (isOpen && typeof hours === 'string') {
+                const parts = hours.split('-');
+                if (parts.length === 2) {
+                  startTime = parts[0].trim();
+                  endTime = parts[1].trim();
+                }
+              }
+
+              const handleToggle = (checked: boolean) => {
+                const newValue = checked ? `${startTime} - ${endTime}` : 'Closed';
+                updateOperatingHours(day as any, newValue);
+              };
+
+              const handleStartTimeChange = (newStart: string) => {
+                const newValue = `${newStart} - ${endTime}`;
+                updateOperatingHours(day as any, newValue);
+              };
+
+              const handleEndTimeChange = (newEnd: string) => {
+                const newValue = `${startTime} - ${newEnd}`;
+                updateOperatingHours(day as any, newValue);
+              };
+
+              return (
+                <div key={day} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-slate-50 border border-slate-200/60 rounded-2xl gap-4">
+                  <div className="flex items-center space-x-3">
+                    {/* Open/Closed Toggle */}
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={isOpen}
+                        onChange={(e) => handleToggle(e.target.checked)}
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-sunset/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+                    </label>
+                    <div>
+                      <span className="text-sm font-bold text-slate-800 capitalize">{day}</span>
+                      <span className={`text-[10px] font-bold block ${isOpen ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {isOpen ? 'Open' : 'Closed'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {isOpen && (
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="time"
+                        value={startTime}
+                        onChange={(e) => handleStartTimeChange(e.target.value)}
+                        className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-sunset/20"
+                      />
+                      <span className="text-xs text-slate-400 font-semibold">to</span>
+                      <input
+                        type="time"
+                        value={endTime}
+                        onChange={(e) => handleEndTimeChange(e.target.value)}
+                        className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-700 focus:outline-none focus:ring-2 focus:ring-primary-sunset/20"
+                      />
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </div>
 

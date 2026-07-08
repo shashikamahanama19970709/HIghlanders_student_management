@@ -13,6 +13,7 @@ import { useInquiry } from '@/contexts/InquiryContext';
 export default function HomePage() {
   const { openModal } = useModal();
   const { openInquiryModal } = useInquiry();
+  const [settings, setSettings] = useState<any>(null);
   const [heroVideoUrl, setHeroVideoUrl] = useState<string | undefined>(undefined);
   const [historyText, setHistoryText] = useState<string | undefined>(undefined);
 
@@ -22,6 +23,7 @@ export default function HomePage() {
         const res = await fetch('/api/settings');
         const result = await res.json();
         if (result.success && result.data) {
+          setSettings(result.data);
           if (result.data.heroVideo?.url) {
             setHeroVideoUrl(result.data.heroVideo.url);
           }
@@ -50,7 +52,7 @@ export default function HomePage() {
       <ClassesSection />
       <AboutSection historyText={historyText} />
       <StoreSection />
-      <ContactSection />
+      <ContactSection settings={settings} />
     </>
   );
 }

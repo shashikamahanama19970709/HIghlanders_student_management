@@ -290,8 +290,8 @@ export default function AdminMasters() {
 
       {/* Add/Edit Master Modal */}
       {(showForm || editingMaster) && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-4 sm:p-8 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold mb-6">
               {editingMaster ? 'Edit Master' : 'Add New Master'}
             </h2>
@@ -442,7 +442,7 @@ export default function AdminMasters() {
               </div>
 
               {/* Form Actions */}
-              <div className="flex justify-end space-x-4 pt-4 border-t">
+              <div className="flex w-full sm:w-auto justify-end gap-3 pt-4 border-t">
                 <button
                   type="button"
                   onClick={() => {
@@ -450,14 +450,14 @@ export default function AdminMasters() {
                     setEditingMaster(null);
                     resetForm();
                   }}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+                  className="flex-1 sm:flex-initial px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors text-center justify-center"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={uploadingImage}
-                  className="btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 sm:flex-initial btn-primary disabled:opacity-50 disabled:cursor-not-allowed text-center justify-center"
                 >
                   {editingMaster ? 'Update Master' : 'Create Master'}
                 </button>

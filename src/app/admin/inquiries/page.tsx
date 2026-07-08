@@ -380,7 +380,7 @@ export default function AdminInquiries() {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-primary-navy to-[#121c3f] border-b-2 border-primary-sunset text-white p-6">
+            <div className="bg-gradient-to-r from-primary-navy to-[#121c3f] border-b-2 border-primary-sunset text-white p-4 sm:p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold">Inquiry Details</h2>
@@ -396,7 +396,7 @@ export default function AdminInquiries() {
             </div>
 
             {/* Content */}
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               <div>
                 <h3 className="text-lg font-semibold mb-4 flex items-center">
                   <User className="w-5 h-5 mr-2 text-primary-sunset" />
@@ -448,16 +448,16 @@ export default function AdminInquiries() {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-4 border-t text-left">
                 <div className="text-sm text-gray-600">
                   <p>Received: {formatDate(selectedInquiry.createdAt)}</p>
                   <p>Last Updated: {formatDate(selectedInquiry.updatedAt)}</p>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex w-full sm:w-auto justify-end gap-2">
                   {selectedInquiry.status !== 'resolved' && (
                     <button
                       onClick={() => handleConvertToStudent(selectedInquiry._id)}
-                      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-semibold text-sm flex items-center space-x-1.5 animate-none"
+                      className="flex-1 sm:flex-initial px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg transition-colors font-semibold text-sm flex items-center justify-center space-x-1.5 animate-none"
                     >
                       <User className="w-4 h-4" />
                       <span>Add as Student</span>
@@ -465,7 +465,7 @@ export default function AdminInquiries() {
                   )}
                   <button
                     onClick={() => setShowDetailsModal(false)}
-                    className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm text-gray-700"
+                    className="flex-1 sm:flex-initial px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 font-medium text-sm text-gray-750 text-center"
                   >
                     Close
                   </button>
