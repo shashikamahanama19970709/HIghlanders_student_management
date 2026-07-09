@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Check, 
   X, 
@@ -209,48 +210,92 @@ export default function AdminMembers() {
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
         {/* Card: Total */}
-        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('all')}
+          className={`text-left rounded-2xl border p-6 flex items-center justify-between transition-all duration-300 focus:outline-none w-full ${
+            statusFilter === 'all'
+              ? 'bg-blue-50/30 border-blue-500 shadow-md ring-2 ring-blue-500/10'
+              : 'bg-white border-gray-150 hover:border-blue-300 hover:shadow-sm'
+          }`}
+        >
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Total Requests</p>
             <p className="text-3xl font-black text-slate-800 mt-2 tracking-tight">{stats.total}</p>
           </div>
-          <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-xl flex items-center justify-center">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+            statusFilter === 'all' ? 'bg-blue-200 text-blue-700' : 'bg-blue-50 text-blue-500'
+          }`}>
             <Users className="w-6 h-6" />
           </div>
-        </div>
+        </motion.button>
 
         {/* Card: Pending */}
-        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('pending')}
+          className={`text-left rounded-2xl border p-6 flex items-center justify-between transition-all duration-300 focus:outline-none w-full ${
+            statusFilter === 'pending'
+              ? 'bg-amber-50/40 border-amber-500 shadow-md ring-2 ring-amber-500/10'
+              : 'bg-white border-gray-150 hover:border-amber-300 hover:shadow-sm'
+          }`}
+        >
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Pending</p>
             <p className="text-3xl font-black text-amber-600 mt-2 tracking-tight">{stats.pending}</p>
           </div>
-          <div className="w-12 h-12 bg-amber-50 text-amber-500 rounded-xl flex items-center justify-center animate-pulse-slow">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors animate-pulse-slow ${
+            statusFilter === 'pending' ? 'bg-amber-200 text-amber-700' : 'bg-amber-50 text-amber-500'
+          }`}>
             <Clock className="w-6 h-6" />
           </div>
-        </div>
+        </motion.button>
 
         {/* Card: Approved */}
-        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('approved')}
+          className={`text-left rounded-2xl border p-6 flex items-center justify-between transition-all duration-300 focus:outline-none w-full ${
+            statusFilter === 'approved'
+              ? 'bg-emerald-50/30 border-emerald-500 shadow-md ring-2 ring-emerald-500/10'
+              : 'bg-white border-gray-150 hover:border-emerald-300 hover:shadow-sm'
+          }`}
+        >
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Approved</p>
             <p className="text-3xl font-black text-emerald-600 mt-2 tracking-tight">{stats.approved}</p>
           </div>
-          <div className="w-12 h-12 bg-emerald-50 text-emerald-500 rounded-xl flex items-center justify-center">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+            statusFilter === 'approved' ? 'bg-emerald-200 text-emerald-700' : 'bg-emerald-50 text-emerald-500'
+          }`}>
             <CheckCircle2 className="w-6 h-6" />
           </div>
-        </div>
+        </motion.button>
 
         {/* Card: Rejected */}
-        <div className="bg-white rounded-2xl border border-gray-150 p-6 flex items-center justify-between shadow-sm hover:shadow-md transition-all duration-300">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('rejected')}
+          className={`text-left rounded-2xl border p-6 flex items-center justify-between transition-all duration-300 focus:outline-none w-full ${
+            statusFilter === 'rejected'
+              ? 'bg-rose-50/30 border-rose-500 shadow-md ring-2 ring-rose-500/10'
+              : 'bg-white border-gray-150 hover:border-rose-300 hover:shadow-sm'
+          }`}
+        >
           <div>
             <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Rejected</p>
             <p className="text-3xl font-black text-rose-600 mt-2 tracking-tight">{stats.rejected}</p>
           </div>
-          <div className="w-12 h-12 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center">
+          <div className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+            statusFilter === 'rejected' ? 'bg-rose-200 text-rose-700' : 'bg-rose-50 text-rose-500'
+          }`}>
             <XCircle className="w-6 h-6" />
           </div>
-        </div>
+        </motion.button>
       </div>
 
       {/* Control Bar (Search & Filter) */}

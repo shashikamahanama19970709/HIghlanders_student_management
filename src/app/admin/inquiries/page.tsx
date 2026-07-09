@@ -27,14 +27,19 @@ export default function AdminInquiries() {
   const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'in-progress' | 'resolved'>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, statusFilter]);
 
   const filteredInquiries = inquiries.filter(i => {
+    if (statusFilter !== 'all' && i.status !== statusFilter) {
+      return false;
+    }
     const query = searchQuery.toLowerCase();
+    if (!query) return true;
     const nameMatch = i.name?.toLowerCase().includes(query);
     const emailMatch = i.email?.toLowerCase().includes(query);
     const phoneMatch = i.phone?.toLowerCase().includes(query);
@@ -228,59 +233,95 @@ export default function AdminInquiries() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('all')}
+          className={`text-left p-6 rounded-xl border transition-all duration-200 focus:outline-none ${
+            statusFilter === 'all'
+              ? 'bg-blue-50/30 border-blue-500 shadow-md ring-2 ring-blue-500/10'
+              : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+          }`}
+        >
           <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <Mail className="w-6 h-6 text-blue-600" />
+            <div className={`p-3 rounded-lg transition-colors ${statusFilter === 'all' ? 'bg-blue-200/80 text-blue-700' : 'bg-blue-100 text-blue-600'}`}>
+              <Mail className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">Total Inquiries</p>
+              <p className="text-sm font-semibold text-gray-500">Total Inquiries</p>
               <p className="text-2xl font-bold text-gray-900">{inquiries.length}</p>
             </div>
           </div>
-        </div>
+        </motion.button>
         
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('pending')}
+          className={`text-left p-6 rounded-xl border transition-all duration-200 focus:outline-none ${
+            statusFilter === 'pending'
+              ? 'bg-yellow-50/40 border-yellow-500 shadow-md ring-2 ring-yellow-500/10'
+              : 'bg-white border-gray-200 hover:border-yellow-300 hover:shadow-sm'
+          }`}
+        >
           <div className="flex items-center">
-            <div className="p-3 bg-yellow-100 rounded-lg">
-              <Clock className="w-6 h-6 text-yellow-600" />
+            <div className={`p-3 rounded-lg transition-colors ${statusFilter === 'pending' ? 'bg-yellow-200/80 text-yellow-700' : 'bg-yellow-100 text-yellow-600'}`}>
+              <Clock className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">Pending</p>
+              <p className="text-sm font-semibold text-gray-500">Pending</p>
               <p className="text-2xl font-bold text-gray-900">
                 {inquiries.filter(i => i.status === 'pending').length}
               </p>
             </div>
           </div>
-        </div>
+        </motion.button>
         
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('in-progress')}
+          className={`text-left p-6 rounded-xl border transition-all duration-200 focus:outline-none ${
+            statusFilter === 'in-progress'
+              ? 'bg-blue-50/30 border-blue-500 shadow-md ring-2 ring-blue-500/10'
+              : 'bg-white border-gray-200 hover:border-blue-300 hover:shadow-sm'
+          }`}
+        >
           <div className="flex items-center">
-            <div className="p-3 bg-blue-100 rounded-lg">
-              <MessageSquare className="w-6 h-6 text-blue-600" />
+            <div className={`p-3 rounded-lg transition-colors ${statusFilter === 'in-progress' ? 'bg-blue-200/80 text-blue-700' : 'bg-blue-100 text-blue-600'}`}>
+              <MessageSquare className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">In Progress</p>
+              <p className="text-sm font-semibold text-gray-500">In Progress</p>
               <p className="text-2xl font-bold text-gray-900">
                 {inquiries.filter(i => i.status === 'in-progress').length}
               </p>
             </div>
           </div>
-        </div>
+        </motion.button>
         
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
+        <motion.button
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setStatusFilter('resolved')}
+          className={`text-left p-6 rounded-xl border transition-all duration-200 focus:outline-none ${
+            statusFilter === 'resolved'
+              ? 'bg-green-50/30 border-green-500 shadow-md ring-2 ring-green-500/10'
+              : 'bg-white border-gray-200 hover:border-green-300 hover:shadow-sm'
+          }`}
+        >
           <div className="flex items-center">
-            <div className="p-3 bg-green-100 rounded-lg">
-              <CheckCircle className="w-6 h-6 text-green-600" />
+            <div className={`p-3 rounded-lg transition-colors ${statusFilter === 'resolved' ? 'bg-green-200/80 text-green-700' : 'bg-green-100 text-green-600'}`}>
+              <CheckCircle className="w-6 h-6" />
             </div>
             <div className="ml-4">
-              <p className="text-sm text-gray-600">Resolved</p>
+              <p className="text-sm font-semibold text-gray-500">Resolved</p>
               <p className="text-2xl font-bold text-gray-900">
                 {inquiries.filter(i => i.status === 'resolved').length}
               </p>
             </div>
           </div>
-        </div>
+        </motion.button>
       </div>
 
       {/* Search Bar */}
@@ -300,7 +341,9 @@ export default function AdminInquiries() {
       {/* Inquiries List */}
       <div className="bg-white rounded-lg shadow-sm border">
         <div className="p-6 border-b flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Recent Inquiries</h2>
+          <h2 className="text-lg font-semibold text-gray-900 capitalize">
+            {statusFilter === 'all' ? 'All Inquiries' : `${statusFilter.replace('-', ' ')} Inquiries`}
+          </h2>
           <span className="text-xs text-gray-400 font-bold">{filteredInquiries.length} total</span>
         </div>
         
