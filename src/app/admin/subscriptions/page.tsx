@@ -26,6 +26,30 @@ export default function AdminSubscriptions() {
   const [saving, setSaving] = useState(false);
   const [editingPlanId, setEditingPlanId] = useState<string | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const filteredPlans = plans.filter(p => {
+    const query = searchQuery.toLowerCase();
+    const nameMatch = p.name?.toLowerCase().includes(query);
+    const descMatch = p.description?.toLowerCase().includes(query);
+    const billingMatch = p.billingCycle?.toLowerCase().includes(query);
+    const priceMatch = p.price?.toString().includes(query);
+    const featuresMatch = p.features?.join(' ')?.toLowerCase().includes(query);
+    return nameMatch || descMatch || billingMatch || priceMatch || featuresMatch;
+  });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredPlans.length / itemsPerPage);
+  const paginatedPlans = filteredPlans.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   // New plan form state
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -198,9 +222,23 @@ export default function AdminSubscriptions() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6 relative max-w-md">
+        <input
+          type="text"
+          placeholder="Search subscription plans by name, billing cycle, features..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2.5 pl-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all font-medium text-slate-700 bg-white"
+        />
+        <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {plans.map((plan) => (
+        {paginatedPlans.map((plan) => (
           <div key={plan._id} className="bg-white rounded-3xl border border-gray-150 shadow-sm hover:shadow-xl hover:shadow-slate-100/40 transition-all duration-300 flex flex-col overflow-hidden">
             {/* Header banner */}
             <div className="bg-slate-50/50 p-6 border-b border-gray-100 flex items-center justify-between">
@@ -277,6 +315,45 @@ export default function AdminSubscriptions() {
             <p className="text-xs text-slate-400 max-w-sm mx-auto mt-1 font-medium">Create a subscription plan using the button above to begin registering packages in Stripe and the local database.</p>
           </div>
         )}
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-150 pt-6 mt-6">
+          <p className="text-xs font-semibold text-slate-500">
+            Showing <span className="text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, filteredPlans.length)}</span> of <span className="text-slate-700">{filteredPlans.length}</span> plans
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-xl text-xs font-black transition-colors ${
+                    currentPage === page
+                      ? 'bg-primary-wave text-white'
+                      : 'border border-gray-200 text-slate-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
       </div>
 
       {/* Create Subscription Modal */}
