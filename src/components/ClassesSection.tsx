@@ -1,10 +1,53 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Clock, Users, Calendar, ChevronRight, X } from 'lucide-react';
 import { Class } from '@/types';
 import { useInquiry } from '@/contexts/InquiryContext';
+
+const ClassDescription = ({ description, onShowMore }: { description: string; onShowMore: () => void }) => {
+  const [isOverflowing, setIsOverflowing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const check = () => {
+      setIsOverflowing(el.scrollHeight > el.clientHeight);
+    };
+
+    check();
+
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [description]);
+
+  return (
+    <div className="mb-8">
+      <div 
+        ref={containerRef}
+        className="text-gray-600 text-sm leading-relaxed break-words line-clamp-5 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+        dangerouslySetInnerHTML={{ __html: description }}
+      />
+      {isOverflowing && (
+        <button
+          type="button"
+          onClick={onShowMore}
+          className="text-xs font-bold text-primary-wave hover:text-primary-sunset mt-2 transition-colors inline-flex items-center space-x-0.5"
+        >
+          <span>Show More</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      )}
+    </div>
+  );
+};
 
 const ClassesSection = () => {
   const [classes, setClasses] = useState<Class[]>([]);
@@ -65,7 +108,7 @@ const ClassesSection = () => {
                     <span className="px-3.5 py-1.5 bg-primary-wave/10 text-primary-wave text-xs font-bold rounded-full uppercase tracking-wider">
                       {classItem.ageCategory}
                     </span>
-                    <h3 className="text-2xl font-bold text-gray-900 mt-3 mb-2 font-athletic uppercase tracking-wide">
+                    <h3 className="text-2xl font-bold text-gray-900 mt-3 mb-2 font-athletic uppercase tracking-wide break-words">
                       {classItem.name}
                     </h3>
                     <div className="flex items-center text-sm text-gray-500 font-semibold mt-1">
@@ -90,21 +133,10 @@ const ClassesSection = () => {
                   </div>
 
                   {/* Description */}
-                  <div className="mb-8">
-                    <p className={`text-gray-600 text-sm leading-relaxed ${classItem.description.length > 220 ? 'line-clamp-5' : ''}`}>
-                      {classItem.description}
-                    </p>
-                    {classItem.description.length > 220 && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedClassForModal(classItem)}
-                        className="text-xs font-bold text-primary-wave hover:text-primary-sunset mt-2 transition-colors inline-flex items-center space-x-0.5"
-                      >
-                        <span>Show More</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
+                  <ClassDescription 
+                    description={classItem.description} 
+                    onShowMore={() => setSelectedClassForModal(classItem)} 
+                  />
                 </div>
 
                 {/* CTA Button */}
@@ -165,7 +197,7 @@ const ClassesSection = () => {
                     <span className="px-2.5 py-1 bg-white/10 text-white border border-white/20 text-[10px] font-bold rounded-full uppercase tracking-wider">
                       {selectedClassForModal.ageCategory}
                     </span>
-                    <h3 className="text-xl font-bold font-athletic uppercase tracking-wide mt-2 text-white leading-tight">
+                    <h3 className="text-xl font-bold font-athletic uppercase tracking-wide mt-2 text-white leading-tight break-words">
                       {selectedClassForModal.name}
                     </h3>
                   </div>
@@ -183,9 +215,10 @@ const ClassesSection = () => {
               <div className="p-6 space-y-5 max-h-[60vh] overflow-y-auto">
                 <div>
                   <h4 className="text-xs font-black text-slate-400 uppercase tracking-wider mb-2">Program Description</h4>
-                  <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
-                    {selectedClassForModal.description}
-                  </p>
+                  <div 
+                    className="text-sm text-slate-600 leading-relaxed font-medium break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+                    dangerouslySetInnerHTML={{ __html: selectedClassForModal.description }}
+                  />
                 </div>
 
                 <div className="border-t border-slate-100 pt-4">

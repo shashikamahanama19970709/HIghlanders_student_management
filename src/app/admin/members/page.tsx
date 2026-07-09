@@ -36,6 +36,8 @@ export default function AdminMembers() {
   const [credsPassword, setCredsPassword] = useState('');
   const [credsSaving, setCredsSaving] = useState(false);
 
+  const [currentPage, setCurrentPage] = useState(1);
+
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmConfig, setConfirmConfig] = useState<{
     title: string;
@@ -48,6 +50,14 @@ export default function AdminMembers() {
     message: '',
     onConfirm: () => {},
   });
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter]);
+
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
 
   const handleOpenCredentialsModal = (member: MemberRequest) => {
     setSelectedMember(member);
@@ -165,6 +175,13 @@ export default function AdminMembers() {
     const matchesStatus = statusFilter === 'all' || member.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredMembers.length / itemsPerPage);
+  const paginatedMembers = filteredMembers.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
   const getStats = () => {
     return {
@@ -291,7 +308,7 @@ export default function AdminMembers() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
-              {filteredMembers.map((member) => (
+              {paginatedMembers.map((member) => (
                 <tr key={member._id} className="hover:bg-slate-50/50 transition-colors duration-250">
                   {/* Name */}
                   <td className="pl-8 pr-6 py-5 whitespace-nowrap">
@@ -385,7 +402,7 @@ export default function AdminMembers() {
                         className="flex items-center space-x-1 px-3.5 py-2 bg-[#E35E1C]/10 text-[#E35E1C] hover:bg-[#E35E1C]/20 border border-[#E35E1C]/25 rounded-xl text-xs font-bold shadow-sm transition-all duration-200 active:scale-95"
                       >
                         <Key className="w-3.5 h-3.5" />
-                        <span>Set Credentials</span>
+                        <span>{member.credentialsCreated ? 'Update Credentials' : 'Set Credentials'}</span>
                       </button>
                     ) : (
                       <span className="text-xs font-bold text-gray-400 italic">No actions pending</span>
@@ -405,6 +422,46 @@ export default function AdminMembers() {
         )}
       </div>
 
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-150 pt-6 mt-6 mb-8">
+          <p className="text-xs font-semibold text-slate-500">
+            Showing <span className="text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, filteredMembers.length)}</span> of <span className="text-slate-700">{filteredMembers.length}</span> members
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-xl text-xs font-black transition-colors ${
+                    currentPage === page
+                      ? 'bg-primary-wave text-white'
+                      : 'border border-gray-200 text-slate-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Set Credentials Modal */}
       {isCredsOpen && selectedMember && (
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in animate-duration-200">
@@ -416,7 +473,9 @@ export default function AdminMembers() {
                   <Key className="w-5 h-5 text-primary-sunset" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base leading-tight">Set Credentials</h3>
+                  <h3 className="font-bold text-base leading-tight">
+                    {selectedMember.credentialsCreated ? 'Update Credentials' : 'Set Credentials'}
+                  </h3>
                   <p className="text-[10px] text-gray-300 mt-0.5">Account settings for {selectedMember.firstName} {selectedMember.lastName}</p>
                 </div>
               </div>
@@ -483,7 +542,7 @@ export default function AdminMembers() {
               </button>
               <button
                 onClick={handleSaveCredentials}
-                disabled={credsSaving || !credsEmail || !credsPassword}
+                disabled={credsSaving || !credsPassword || !isValidEmail(credsEmail)}
                 className="flex-1 sm:flex-initial px-5 py-2.5 bg-primary-sunset text-white hover:bg-primary-wave rounded-xl text-xs font-black shadow-md hover:shadow-lg transition-all flex items-center justify-center space-x-1.5 disabled:opacity-50 disabled:cursor-not-allowed text-center"
               >
                 <span>{credsSaving ? 'Saving...' : 'Save & Inform Student'}</span>

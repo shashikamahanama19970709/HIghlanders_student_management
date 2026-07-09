@@ -59,6 +59,7 @@ export interface MemberRequest {
   termsAccepted: boolean;
   termsAcceptedAt: Date;
   status: 'pending' | 'approved' | 'rejected';
+  credentialsCreated?: boolean;
   createdAt: Date;
   updatedAt: Date;
 }

@@ -69,13 +69,17 @@ export async function POST(request: NextRequest) {
       await db.collection('users').insertOne(newUser);
     }
 
-    // 4. Update the email in memberRequests if it was changed
-    if (finalEmail !== memberRequest.email.toLowerCase()) {
-      await db.collection('memberRequests').updateOne(
-        { _id: new ObjectId(memberId) },
-        { $set: { email: finalEmail, updatedAt: new Date() } }
-      );
-    }
+    // 4. Update the email and set credentialsCreated status in memberRequests
+    await db.collection('memberRequests').updateOne(
+      { _id: new ObjectId(memberId) },
+      { 
+        $set: { 
+          credentialsCreated: true, 
+          email: finalEmail, 
+          updatedAt: new Date() 
+        } 
+      }
+    );
 
     // 5. Send credentials notification email
     const loginUrl = `${request.nextUrl.origin}/login`;

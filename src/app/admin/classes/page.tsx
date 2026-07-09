@@ -15,6 +15,38 @@ export default function AdminClasses() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [classToDelete, setClassToDelete] = useState<string | null>(null);
 
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [description, setDescription] = useState('');
+
+  useEffect(() => {
+    if (editingClass) {
+      setDescription(editingClass.description);
+    } else {
+      setDescription('');
+    }
+  }, [editingClass, showForm]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const filteredClasses = classes.filter(cls => {
+    const query = searchQuery.toLowerCase();
+    const nameMatch = cls.name?.toLowerCase().includes(query);
+    const ageMatch = cls.ageCategory?.toLowerCase().includes(query);
+    const descMatch = cls.description?.toLowerCase().includes(query);
+    const daysMatch = cls.schedule?.days?.join(' ')?.toLowerCase().includes(query);
+    return nameMatch || ageMatch || descMatch || daysMatch;
+  });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredClasses.length / itemsPerPage);
+  const paginatedClasses = filteredClasses.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
   useEffect(() => {
     fetchClasses();
   }, []);
@@ -146,9 +178,23 @@ export default function AdminClasses() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6 relative max-w-md">
+        <input
+          type="text"
+          placeholder="Search classes by name, age, description..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2.5 pl-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all font-medium text-slate-700 bg-white"
+        />
+        <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
       {/* Classes Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {classes.map((classItem) => (
+        {paginatedClasses.map((classItem) => (
           <div key={classItem._id} className="bg-white rounded-2xl border border-gray-150 p-6 flex flex-col justify-between hover:shadow-xl hover:shadow-gray-200/20 hover:-translate-y-0.5 transition-all duration-300">
             <div>
               <div className="flex justify-between items-start mb-4">
@@ -171,7 +217,7 @@ export default function AdminClasses() {
                 </div>
               </div>
 
-              <h3 className="text-xl font-bold text-gray-900 mb-2 font-athletic uppercase tracking-wide">{classItem.name}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2 font-athletic uppercase tracking-wide break-words">{classItem.name}</h3>
               <div className="mb-4">
                 {classItem.showOnWeb ? (
                   <span className="inline-block px-2.5 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-black uppercase tracking-wider rounded-full border border-emerald-200">
@@ -201,7 +247,10 @@ export default function AdminClasses() {
                 </div>
               </div>
 
-              <p className="text-gray-500 text-xs leading-relaxed mb-6">{classItem.description}</p>
+              <div 
+                className="text-gray-500 text-xs leading-relaxed mb-6 break-words [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_p]:mb-2"
+                dangerouslySetInnerHTML={{ __html: classItem.description }}
+              />
             </div>
 
             <div className="pt-4 border-t border-gray-100 flex items-center justify-between">
@@ -216,6 +265,46 @@ export default function AdminClasses() {
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-150 pt-6 mt-6">
+          <p className="text-xs font-semibold text-slate-500">
+            Showing <span className="text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, filteredClasses.length)}</span> of <span className="text-slate-700">{filteredClasses.length}</span> classes
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-xl text-xs font-black transition-colors ${
+                    currentPage === page
+                      ? 'bg-primary-wave text-white'
+                      : 'border border-gray-200 text-slate-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Class Modal */}
       {(showForm || editingClass) && (
@@ -258,13 +347,54 @@ export default function AdminClasses() {
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wide mb-1.5">
                   Description
                 </label>
-                <textarea
-                  rows={3}
-                  name="description"
-                  defaultValue={editingClass?.description}
-                  className="w-full px-3.5 py-2.5 text-sm border border-gray-255 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all"
-                  placeholder="Class program details and prerequisites..."
-                />
+                <div className="border border-gray-250 rounded-xl overflow-hidden focus-within:ring-2 focus-within:ring-primary-wave/20 focus-within:border-primary-wave transition-all bg-white">
+                  {/* Toolbar */}
+                  <div className="bg-slate-50 border-b border-gray-200 p-2 flex items-center space-x-1">
+                    <button
+                      type="button"
+                      onClick={() => document.execCommand('bold', false)}
+                      className="px-2.5 py-1 hover:bg-slate-200 rounded text-xs font-black text-slate-700 border border-gray-200 bg-white"
+                      title="Bold"
+                    >
+                      B
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => document.execCommand('italic', false)}
+                      className="px-2.5 py-1 hover:bg-slate-200 rounded text-xs italic text-slate-700 border border-gray-200 bg-white"
+                      title="Italic"
+                    >
+                      I
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => document.execCommand('underline', false)}
+                      className="px-2.5 py-1 hover:bg-slate-200 rounded text-xs underline text-slate-700 border border-gray-200 bg-white"
+                      title="Underline"
+                    >
+                      U
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => document.execCommand('insertUnorderedList', false)}
+                      className="px-2.5 py-1 hover:bg-slate-200 rounded text-xs text-slate-700 border border-gray-200 bg-white font-bold"
+                      title="Bullet List"
+                    >
+                      • List
+                    </button>
+                  </div>
+                  
+                  {/* Editable Area */}
+                  <div
+                    contentEditable
+                    dangerouslySetInnerHTML={{ __html: description }}
+                    onBlur={(e) => setDescription(e.currentTarget.innerHTML)}
+                    className="min-h-[120px] p-3 text-sm focus:outline-none text-slate-750 overflow-y-auto"
+                  />
+                  
+                  {/* Hidden Input for Form Submission */}
+                  <input type="hidden" name="description" value={description} />
+                </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">

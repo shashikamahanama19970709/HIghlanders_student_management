@@ -347,13 +347,13 @@ const StoreSection = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: 0.3 }}
-              className="flex flex-col sm:flex-row items-center gap-6"
+              className="flex flex-col sm:flex-row items-center gap-6 mt-8 w-full"
             >
               <motion.a
                 href="https://highlandersfitness.store/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-gradient-to-r from-primary-sunset to-[#FF3E00] text-white font-bold py-4 px-10 rounded-full hover:shadow-xl hover:shadow-primary-sunset/30 transition-all duration-300 group"
+                className="w-full sm:w-auto inline-flex items-center justify-center space-x-3 bg-gradient-to-r from-primary-sunset to-[#FF3E00] text-white font-bold py-4 px-8 rounded-full hover:shadow-xl hover:shadow-primary-sunset/30 transition-all duration-300 group whitespace-nowrap"
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -363,7 +363,7 @@ const StoreSection = () => {
               </motion.a>
 
               {/* QR Code Container */}
-              <div className="flex items-center space-x-4 bg-white/[0.03] border border-white/10 p-3 rounded-2xl w-full sm:w-auto shadow-inner">
+              <div className="flex items-center space-x-4 bg-white/[0.03] border border-white/10 p-3 rounded-2xl w-full sm:w-auto shadow-inner sm:ml-auto">
                 <div className="w-16 h-16 bg-white p-1.5 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
                   <img 
                     src="https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=https://highlandersfitness.store/" 
@@ -373,7 +373,7 @@ const StoreSection = () => {
                 </div>
                 <div>
                   <span className="text-[10px] font-black text-primary-sunset uppercase tracking-wider block">Scan to Shop</span>
-                  <span className="text-xs text-gray-400 font-semibold block leading-tight mt-0.5">Visit our fitness store on your mobile device</span>
+                  <span className="text-xs text-gray-400 font-semibold block leading-tight mt-0.5 whitespace-nowrap">Visit store on your mobile</span>
                 </div>
               </div>
             </motion.div>

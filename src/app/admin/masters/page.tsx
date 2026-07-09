@@ -15,6 +15,29 @@ export default function AdminMasters() {
   const [uploadingImage, setUploadingImage] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [masterToDelete, setMasterToDelete] = useState<string | null>(null);
+
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
+
+  const filteredMasters = masters.filter(m => {
+    const query = searchQuery.toLowerCase();
+    const nameMatch = m.name?.toLowerCase().includes(query);
+    const titleMatch = m.title?.toLowerCase().includes(query);
+    const bioMatch = m.bio?.toLowerCase().includes(query);
+    const rankMatch = m.rank?.toLowerCase().includes(query);
+    return nameMatch || titleMatch || bioMatch || rankMatch;
+  });
+
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredMasters.length / itemsPerPage);
+  const paginatedMasters = filteredMasters.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
   const [formData, setFormData] = useState<Partial<Master>>({
     name: '',
     title: '',
@@ -212,9 +235,23 @@ export default function AdminMasters() {
         </button>
       </div>
 
+      {/* Search Bar */}
+      <div className="mb-6 relative max-w-md">
+        <input
+          type="text"
+          placeholder="Search masters by name, rank, bio..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full px-4 py-2.5 pl-10 text-sm border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-wave/20 focus:border-primary-wave transition-all font-medium text-slate-700 bg-white"
+        />
+        <svg className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 transform -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+        </svg>
+      </div>
+
       {/* Masters Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {masters.map((master) => (
+        {paginatedMasters.map((master) => (
           <div key={master._id} className="bg-white rounded-lg shadow-md overflow-hidden">
             {/* Master Image */}
             <div className="h-48 bg-gradient-to-br from-primary-navy to-[#121c3f] flex items-center justify-center">
@@ -287,6 +324,46 @@ export default function AdminMasters() {
           </div>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between border-t border-gray-150 pt-6 mt-6 mb-8">
+          <p className="text-xs font-semibold text-slate-500">
+            Showing <span className="text-slate-700">{(currentPage - 1) * itemsPerPage + 1}</span> to <span className="text-slate-700">{Math.min(currentPage * itemsPerPage, filteredMasters.length)}</span> of <span className="text-slate-700">{filteredMasters.length}</span> masters
+          </p>
+          <div className="flex space-x-2">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Previous
+            </button>
+            <div className="flex space-x-1">
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => setCurrentPage(page)}
+                  className={`w-8 h-8 rounded-xl text-xs font-black transition-colors ${
+                    currentPage === page
+                      ? 'bg-primary-wave text-white'
+                      : 'border border-gray-200 text-slate-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+            </div>
+            <button
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 border border-gray-200 rounded-xl text-xs font-bold text-slate-600 hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Add/Edit Master Modal */}
       {(showForm || editingMaster) && (
