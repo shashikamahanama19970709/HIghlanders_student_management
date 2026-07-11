@@ -17,7 +17,7 @@ const ContactSection = ({ settings }: ContactSectionProps) => {
   const contactInfo = {
     address: settings?.contactInfo?.address || '123 Highland Avenue, Edinburgh, EH1 2YZ, Scotland',
     phone: settings?.contactInfo?.phone || '+44 131 234 5678',
-    email: settings?.contactInfo?.email || 'info@highlanderstkd.com',
+    email: settings?.contactInfo?.email || 'info@highlanderstaekwondo.club',
     mapEmbedUrl: settings?.contactInfo?.mapEmbedUrl || 'https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2238.123456789!2d-3.200000!3d55.950000!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMznCsDU3JzAwLjAiTiAzcwrJMTInMDAuMCJF!5e0!3m2!1sen!2suk!4v1234567890',
   };
 

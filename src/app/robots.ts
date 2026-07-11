@@ -7,6 +7,6 @@ export default function robots(): MetadataRoute.Robots {
       allow: '/',
       disallow: ['/admin/', '/student/', '/api/'],
     },
-    sitemap: 'https://highlanderstkd.com/sitemap.xml',
+    sitemap: 'https://highlanderstaekwondo.club/sitemap.xml',
   };
 }

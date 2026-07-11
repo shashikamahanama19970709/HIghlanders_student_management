@@ -114,6 +114,7 @@ Highlanders Amateur Taekwondo CIC Team`;
       subject: emailSubject,
       text: emailText,
       html: emailHtml,
+      senderType: 'admin',
     });
 
     // If email changed, also notify the new email address
@@ -123,6 +124,7 @@ Highlanders Amateur Taekwondo CIC Team`;
         subject: emailSubject,
         text: emailText,
         html: emailHtml,
+        senderType: 'admin',
       });
     }
 

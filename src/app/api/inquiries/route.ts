@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import clientPromise, { getDatabase } from '@/lib/mongodb';
 import { ObjectId } from 'mongodb';
+import { sendEmail } from '@/lib/mail';
 
 interface InquiryRequest {
   name: string;
@@ -40,6 +41,48 @@ export async function POST(request: NextRequest) {
     };
 
     const result = await db.collection('inquiries').insertOne(inquiry);
+
+    // Notify Front Desk (info@highlanderstaekwondo.club)
+    await sendEmail({
+      to: process.env.INFO_EMAIL || 'info@highlanderstaekwondo.club',
+      subject: `New Public Inquiry: ${subject}`,
+      text: `You have received a new inquiry from the website contact form.\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'Not provided'}\nPreferred Class: ${preferredClass || 'None specified'}\n\nSubject: ${subject}\nMessage:\n${message}\n\n---\nManage inquiries in the Admin Dashboard.`,
+      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">
+        <h2 style="color: #0A1128; border-bottom: 2px solid #E35E1C; padding-bottom: 10px;">New Website Inquiry</h2>
+        <p><strong>Name:</strong> ${name}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <p><strong>Phone:</strong> ${phone || 'Not provided'}</p>
+        <p><strong>Preferred Class:</strong> ${preferredClass || 'None specified'}</p>
+        <p><strong>Subject:</strong> ${subject}</p>
+        <div style="background-color: #f7f9fc; padding: 15px; border-radius: 4px; margin-top: 15px;">
+          <p style="margin: 0; font-weight: bold;">Message:</p>
+          <p style="margin: 5px 0 0 0; white-space: pre-wrap;">${message}</p>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+        <p style="font-size: 11px; color: #888;">This is an automated notification from Highlanders Taekwondo Portal.</p>
+      </div>`,
+      senderType: 'info'
+    });
+
+    // Confirm receipt to the user who submitted the inquiry
+    await sendEmail({
+      to: email,
+      subject: `Inquiry Received - Highlanders Taekwondo`,
+      text: `Hello ${name},\n\nThank you for reaching out to Highlanders Amateur Taekwondo. We have received your inquiry regarding "${subject}" and our team will get back to you as soon as possible.\n\nHere is a copy of your message:\n"${message}"\n\nBest regards,\nHighlanders Front Desk`,
+      html: `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #f0f0f0; border-radius: 8px;">
+        <h2 style="color: #0A1128; border-bottom: 2px solid #E35E1C; padding-bottom: 10px;">Inquiry Received</h2>
+        <p>Hello ${name},</p>
+        <p>Thank you for reaching out to Highlanders Amateur Taekwondo. We have received your inquiry and our team will get back to you as soon as possible.</p>
+        <div style="background-color: #f7f9fc; padding: 15px; border-radius: 4px; border-left: 4px solid #E35E1C; margin: 20px 0;">
+          <p style="margin: 0; font-weight: bold; color: #555;">Summary of your message:</p>
+          <p style="margin: 5px 0 0 0; font-style: italic; color: #777;">"${message}"</p>
+        </div>
+        <p>If you have any urgent questions, feel free to reply directly to this email or call us at our front desk.</p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 30px 0;" />
+        <p style="font-size: 11px; color: #888;">Highlanders Amateur Taekwondo CIC. All rights reserved.</p>
+      </div>`,
+      senderType: 'info'
+    });
 
     return NextResponse.json({
       success: true,

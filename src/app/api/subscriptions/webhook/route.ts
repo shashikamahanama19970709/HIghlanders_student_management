@@ -85,7 +85,8 @@ export async function POST(request: NextRequest) {
               to: email,
               subject: 'Highlanders Taekwondo - Subscription Activated via Stripe',
               text: `Hello,\n\nWe successfully processed your Stripe payment. Your subscription to "${plan.name}" is now active!\nNext payment: ${nextPaymentDate.toLocaleDateString()}.\n\nBest regards,\nHighlanders Taekwondo Team`,
-              html: `<h3>Subscription Activated!</h3><p>Your subscription to <strong>${plan.name}</strong> is now active!</p><p>Next payment: ${nextPaymentDate.toLocaleDateString()}</p>`
+              html: `<h3>Subscription Activated!</h3><p>Your subscription to <strong>${plan.name}</strong> is now active!</p><p>Next payment: ${nextPaymentDate.toLocaleDateString()}</p>`,
+              senderType: 'admin'
             });
           }
         }
@@ -144,7 +145,8 @@ export async function POST(request: NextRequest) {
               to: email,
               subject: 'Highlanders Taekwondo - Recurring Payment Successful',
               text: `Hello,\n\nYour recurring subscription payment of £${planPrice} has been successfully processed.\nNext payment date: ${nextPaymentDate.toLocaleDateString()}.\n\nBest regards,\nHighlanders Taekwondo Team`,
-              html: `<h3>Payment Receipt</h3><p>Your automatic subscription payment has been successfully processed.</p><p>Amount: <strong>£${planPrice}</strong></p><p>Next Payment: <strong>${nextPaymentDate.toLocaleDateString()}</strong></p>`
+              html: `<h3>Payment Receipt</h3><p>Your automatic subscription payment has been successfully processed.</p><p>Amount: <strong>£${planPrice}</strong></p><p>Next Payment: <strong>${nextPaymentDate.toLocaleDateString()}</strong></p>`,
+              senderType: 'admin'
             });
           }
         }
@@ -177,7 +179,8 @@ export async function POST(request: NextRequest) {
             to: email,
             subject: 'Highlanders Taekwondo - Subscription Payment Failed',
             text: `Hello,\n\nYour recurring subscription payment for Highlanders Taekwondo has failed.\nPlease log in to the student portal and update your payment method to avoid membership suspension.\n\nBest regards,\nHighlanders Taekwondo Team`,
-            html: `<h3>Subscription Payment Failed</h3><p>Your automatic subscription payment failed to process.</p><p>Please log in to your student portal and update your billing credentials to keep your active membership.</p>`
+            html: `<h3>Subscription Payment Failed</h3><p>Your automatic subscription payment failed to process.</p><p>Please log in to your student portal and update your billing credentials to keep your active membership.</p>`,
+            senderType: 'admin'
           });
         }
         break;
@@ -201,7 +204,8 @@ export async function POST(request: NextRequest) {
             to: user.email,
             subject: 'Highlanders Taekwondo - Subscription Cancelled',
             text: `Hello,\n\nYour subscription has been cancelled. You will continue to have access until the end of your billing cycle.\n\nBest regards,\nHighlanders Taekwondo Team`,
-            html: `<h3>Subscription Cancelled</h3><p>Your membership subscription has been cancelled successfully.</p>`
+            html: `<h3>Subscription Cancelled</h3><p>Your membership subscription has been cancelled successfully.</p>`,
+            senderType: 'admin'
           });
         }
         break;

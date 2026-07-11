@@ -11,7 +11,7 @@ const DEFAULT_SETTINGS = {
   contactInfo: {
     address: '123 Highland Avenue, Edinburgh, EH1 2YZ, Scotland',
     phone: '+44 131 234 5678',
-    email: 'info@highlanderstkd.com',
+    email: 'info@highlanderstaekwondo.club',
   },
   socialMedia: [
     { platform: 'Facebook', icon: 'facebook', url: 'https://facebook.com/highlanderstkd', isEnabled: true },

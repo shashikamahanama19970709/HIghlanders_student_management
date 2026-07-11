@@ -20,14 +20,14 @@ export const metadata: Metadata = {
   authors: [{ name: 'Highlanders Amateur Taekwondo CIC' }],
   creator: 'Highlanders Amateur Taekwondo CIC',
   publisher: 'Highlanders Amateur Taekwondo CIC',
-  metadataBase: new URL('https://highlanderstkd.com'),
+  metadataBase: new URL('https://highlanderstaekwondo.club'),
   alternates: {
     canonical: '/',
   },
   openGraph: {
     type: 'website',
     locale: 'en_GB',
-    url: 'https://highlanderstkd.com',
+    url: 'https://highlanderstaekwondo.club',
     siteName: 'Highlanders Amateur Taekwondo CIC',
     title: 'Highlanders Amateur Taekwondo CIC | Edinburgh Martial Arts',
     description: 'Professional Taekwondo training and community development in Edinburgh, Scotland. Classes for children, youth, and adults of all experience levels.',
@@ -84,8 +84,8 @@ export default function RootLayout({
               "@type": "SportsClub",
               "name": "Highlanders Amateur Taekwondo CIC",
               "description": "Professional Taekwondo training, martial arts instruction, and community development in Edinburgh, Scotland.",
-              "image": "https://highlanderstkd.com/images/logo.png",
-              "url": "https://highlanderstkd.com",
+              "image": "https://highlanderstaekwondo.club/images/logo.png",
+              "url": "https://highlanderstaekwondo.club",
               "telephone": "+44 131 234 5678",
               "address": {
                 "@type": "PostalAddress",

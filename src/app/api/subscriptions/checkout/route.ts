@@ -208,6 +208,7 @@ Highlanders Amateur Taekwondo CIC Team`;
       subject: emailSubject,
       text: emailText,
       html: emailHtml,
+      senderType: 'admin',
     });
 
     return NextResponse.json({
